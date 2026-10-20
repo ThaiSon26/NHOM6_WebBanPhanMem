@@ -1,0 +1,29 @@
+name: .NET Core CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout mã nguồn
+      uses: actions/checkout@v4
+
+    - name: Cài đặt môi trường .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x' # Hoặc phiên bản .NET bạn đang dùng (7.0, 8.0, 9.0)
+
+    - name: Tải các thư viện phụ thuộc (Restore)
+      run: dotnet restore
+
+    - name: Biên dịch mã nguồn (Build)
+      run: dotnet build --no-restore --configuration Release
+
+    - name: Chạy kiểm thử tự động (Unit Test)
+      run: dotnet test --no-build --configuration Release --verbosity normal
