@@ -17,7 +17,7 @@ jobs:
     - name: Cài đặt môi trường .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '8.0.x' # Hoặc phiên bản .NET bạn đang dùng (7.0, 8.0, 9.0)
+        dotnet-version: '9.0.x'
 
     - name: Tải các thư viện phụ thuộc (Restore)
       run: dotnet restore
