@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - SoftDev Admin</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap 5 & Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    
+    <!-- Chart.js for Bento Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Custom Bento Grid CSS (White + Blue + Clean SaaS + Developer Marketplace) -->
+    <link rel="stylesheet" href="~/css/admin-clean.css" asp-append-version="true" />
+</head>
+<body>
+    <!-- MASTER APP CONTAINER (Clean Floating Bento Frame as in Screenshot) -->
+    <div class="admin-app-container">
+        
+        <!-- SIDEBAR -->
+        <aside class="admin-sidebar" id="adminSidebar">
+            <!-- Sidebar Header with Dark Purple "Quản trị" Pill -->
+            <div class="sidebar-header">
+                <a href="/Admin" class="brand-pill" title="Trang quản trị SoftDev">
+                    <div class="brand-pill-icon">
+                        <i class="bi bi-layers-half"></i>
+                    </div>
+                    <span>Quản trị</span>
+                </a>
+                <button type="button" class="sidebar-toggle-btn" id="sidebarToggleBtn" title="Thu gọn/Mở rộng menu">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="sidebar-nav">
+                @{
+                    var currentPath = Context.Request.Path.Value?.ToLower() ?? "";
+                    bool isOverview = currentPath == "/admin" || currentPath == "/admin/index" || currentPath == "/admin/dashboard";
+                    bool isDanhMuc = currentPath.Contains("danhmuc");
+                }
+
+                <a href="/Admin" class="nav-link-item @(isOverview ? "active" : "")">
+                    <div class="nav-link-item-left">
+                        <i class="bi bi-grid-fill nav-icon"></i>
+                        <span class="nav-text">Tổng quan</span>
+                    </div>
+                    <i class="bi bi-chevron-right nav-chevron"></i>
+                </a>
+
+                <a href="/Admin/DanhMuc" class="nav-link-item @(isDanhMuc ? "active" : "")">
+                    <div class="nav-link-item-left">
+                        <i class="bi bi-folder-fill nav-icon"></i>
+                        <span class="nav-text">Danh mục</span>
+                    </div>
+                    <i class="bi bi-chevron-right nav-chevron"></i>
+                </a>
+
+                <a href="#" class="nav-link-item" onclick="alert('Module Quản lý Sản phẩm đang được cập nhật!'); return false;">
+                    <div class="nav-link-item-left">
+                        <i class="bi bi-laptop nav-icon"></i>
+                        <span class="nav-text">Sản phẩm</span>
+                    </div>
+                    <i class="bi bi-chevron-right nav-chevron"></i>
+                </a>
+
+                <a href="#" class="nav-link-item" onclick="alert('Module Quản lý Đơn hàng đang được cập nhật!'); return false;">
+                    <div class="nav-link-item-left">
+                        <i class="bi bi-receipt-cutoff nav-icon"></i>
+                        <span class="nav-text">Đơn hàng</span>
+                    </div>
+                    <i class="bi bi-chevron-right nav-chevron"></i>
+                </a>
+
+                <a href="#" class="nav-link-item" onclick="alert('Module Quản lý Người dùng đang được cập nhật!'); return false;">
+                    <div class="nav-link-item-left">
+                        <i class="bi bi-person-fill nav-icon"></i>
+                        <span class="nav-text">Người dùng</span>
+                    </div>
+                    <i class="bi bi-chevron-right nav-chevron"></i>
+                </a>
+
+                <a href="#" class="nav-link-item" onclick="alert('Module Thống kê nâng cao đang được cập nhật!'); return false;">
+                    <div class="nav-link-item-left">
+                        <i class="bi bi-bar-chart-line-fill nav-icon"></i>
+                        <span class="nav-text">Thống kê</span>
+                    </div>
+                    <i class="bi bi-chevron-right nav-chevron"></i>
+                </a>
+
+                <a href="#" class="nav-link-item" onclick="alert('Module Cài đặt đang được cập nhật!'); return false;">
+                    <div class="nav-link-item-left">
+                        <i class="bi bi-gear-fill nav-icon"></i>
+                        <span class="nav-text">Cài đặt</span>
+                    </div>
+                    <i class="bi bi-chevron-right nav-chevron"></i>
+                </a>
+            </nav>
+
+            <!-- Sidebar Footer / Store Link -->
+            <div class="sidebar-footer">
+                <a href="/" class="nav-link-item text-primary" style="background: #eff6ff;">
+                    <div class="nav-link-item-left">
+                        <i class="bi bi-shop nav-icon text-primary"></i>
+                        <span class="nav-text fw-bold">Xem Cửa Hàng</span>
+                    </div>
+                    <i class="bi bi-arrow-up-right nav-chevron text-primary"></i>
+                </a>
+            </div>
+        </aside>
+
+        <!-- MAIN VIEW AREA -->
+        <main class="admin-content-area">
+            <!-- Topbar (Title & Action Buttons from Screenshot) -->
+            <header class="admin-topbar">
+                <h1 class="admin-page-title">@(ViewData["Title"] ?? "Bảng điều khiển quản trị")</h1>
+                
+                <div class="topbar-actions">
+                    <!-- Search Icon Button -->
+                    <button class="action-icon-btn" id="topbarSearchBtn" title="Tìm kiếm">
+                        <i class="bi bi-search"></i>
+                    </button>
+
+                    <!-- Purple Notification / Badge Button (from Screenshot) -->
+                    <button class="action-icon-btn purple-btn" title="Thông báo hệ thống">
+                        <i class="bi bi-bell"></i>
+                    </button>
+
+                    <!-- User / Arrow Action (from Screenshot) -->
+                    <a href="/Admin" class="action-icon-btn" title="Chuyển hướng">
+                        <i class="bi bi-arrow-right"></i>
+                    </a>
+
+                    <!-- User Profile Badge -->
+                    <div class="user-profile-badge d-none d-sm-flex">
+                        <div class="user-avatar">TS</div>
+                        <span>Admin</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Body View Container -->
+            <section class="admin-body-container">
+                @RenderBody()
+            </section>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/admin-toggle.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
