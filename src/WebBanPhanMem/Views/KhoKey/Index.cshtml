@@ -5,9 +5,9 @@
 
     var allKeys = Model ?? new List<WebBanPhanMem.Models.Khokey>();
     int totalCount = allKeys.Count;
-    int availableCount = allKeys.Count(k => k.TrangThai == "Chưa bán");
+    int availableCount = allKeys.Count(k => k.TrangThai == "Còn trống");
     int soldCount = allKeys.Count(k => k.TrangThai == "Đã bán");
-    int errorCount = allKeys.Count(k => k.TrangThai == "Lỗi/Thu hồi" || k.TrangThai == "Đã bảo lưu");
+    int errorCount = allKeys.Count(k => k.TrangThai == "Lỗi" || k.TrangThai == "Thu hồi");
 
     var goiList = ViewBag.GoiBanQuyenList as List<WebBanPhanMem.Models.Goibanquyen> ?? new();
     var doiTacList = ViewBag.DoiTacList as List<WebBanPhanMem.Models.Doitac> ?? new();
@@ -70,7 +70,7 @@
             </div>
             <div>
                 <div class="stat-value">@availableCount</div>
-                <div class="stat-label">Key khả dụng (Chưa bán)</div>
+                <div class="stat-label">Key còn trống (Sẵn sàng bán)</div>
             </div>
         </div>
 
@@ -123,10 +123,11 @@
                 </select>
                 <select name="trangThai" class="form-select filter-select">
                     <option value="">-- Trạng thái key --</option>
-                    <option value="Chưa bán" selected="@(selectedTrangThai == "Chưa bán")">Chưa bán</option>
+                    <option value="Còn trống" selected="@(selectedTrangThai == "Còn trống")">Còn trống</option>
                     <option value="Đã bán" selected="@(selectedTrangThai == "Đã bán")">Đã bán</option>
-                    <option value="Lỗi/Thu hồi" selected="@(selectedTrangThai == "Lỗi/Thu hồi")">Lỗi/Thu hồi</option>
-                    <option value="Đã bảo lưu" selected="@(selectedTrangThai == "Đã bảo lưu")">Đã bảo lưu</option>
+                    <option value="Đã giữ chỗ" selected="@(selectedTrangThai == "Đã giữ chỗ")">Đã giữ chỗ</option>
+                    <option value="Lỗi" selected="@(selectedTrangThai == "Lỗi")">Lỗi</option>
+                    <option value="Thu hồi" selected="@(selectedTrangThai == "Thu hồi")">Thu hồi</option>
                 </select>
                 <button type="submit" class="btn btn-primary">
                     <i class="bi bi-funnel me-1"></i>Lọc
@@ -195,16 +196,22 @@
                                 <small class="text-muted">@(k.DoiTac?.TenDoiTac ?? "Tự nhập")</small>
                             </td>
                             <td>
-                                @if (k.TrangThai == "Chưa bán")
+                                @if (k.TrangThai == "Còn trống")
                                 {
                                     <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
-                                        <i class="bi bi-check-circle me-1"></i>Chưa bán
+                                        <i class="bi bi-check-circle me-1"></i>Còn trống
                                     </span>
                                 }
                                 else if (k.TrangThai == "Đã bán")
                                 {
                                     <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">
                                         <i class="bi bi-bag-check me-1"></i>Đã bán
+                                    </span>
+                                }
+                                else if (k.TrangThai == "Đã giữ chỗ")
+                                {
+                                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1">
+                                        <i class="bi bi-clock-history me-1"></i>Đã giữ chỗ
                                     </span>
                                 }
                                 else
@@ -287,10 +294,9 @@
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Loại Key</label>
                             <select name="LoaiKey" class="form-select">
-                                <option value="Retail">Retail (Bán lẻ)</option>
-                                <option value="OEM">OEM (Theo máy)</option>
-                                <option value="Volume (MAK/KMS)">Volume (Doanh nghiệp)</option>
-                                <option value="Account">Account / Email</option>
+                                <option value="Mã kích hoạt">Mã kích hoạt</option>
+                                <option value="Tài khoản">Tài khoản</option>
+                                <option value="Link tải">Link tải</option>
                             </select>
                         </div>
                         <div class="col-md-6">
@@ -348,10 +354,9 @@
                         <div class="col-md-3">
                             <label class="form-label fw-semibold">Loại Key</label>
                             <select name="loaiKey" class="form-select">
-                                <option value="Retail">Retail</option>
-                                <option value="OEM">OEM</option>
-                                <option value="Volume (MAK/KMS)">Volume</option>
-                                <option value="Account">Account</option>
+                                <option value="Mã kích hoạt">Mã kích hoạt</option>
+                                <option value="Tài khoản">Tài khoản</option>
+                                <option value="Link tải">Link tải</option>
                             </select>
                         </div>
                         <div class="col-md-3">
@@ -415,19 +420,19 @@
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Loại Key</label>
                             <select name="LoaiKey" id="editLoaiKey" class="form-select">
-                                <option value="Retail">Retail</option>
-                                <option value="OEM">OEM</option>
-                                <option value="Volume (MAK/KMS)">Volume</option>
-                                <option value="Account">Account</option>
+                                <option value="Mã kích hoạt">Mã kích hoạt</option>
+                                <option value="Tài khoản">Tài khoản</option>
+                                <option value="Link tải">Link tải</option>
                             </select>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Trạng thái Key</label>
                             <select name="TrangThai" id="editTrangThai" class="form-select">
-                                <option value="Chưa bán">Chưa bán</option>
+                                <option value="Còn trống">Còn trống</option>
                                 <option value="Đã bán">Đã bán</option>
-                                <option value="Lỗi/Thu hồi">Lỗi/Thu hồi</option>
-                                <option value="Đã bảo lưu">Đã bảo lưu</option>
+                                <option value="Đã giữ chỗ">Đã giữ chỗ</option>
+                                <option value="Lỗi">Lỗi</option>
+                                <option value="Thu hồi">Thu hồi</option>
                             </select>
                         </div>
                         <div class="col-md-12">

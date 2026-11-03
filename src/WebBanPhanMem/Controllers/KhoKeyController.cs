@@ -120,16 +120,16 @@ namespace WebBanPhanMem.Controllers
             }
 
             key.MaKey = key.MaKey.Trim();
-            key.LoaiKey = string.IsNullOrWhiteSpace(key.LoaiKey) ? "Retail" : key.LoaiKey.Trim();
-            key.TrangThai = string.IsNullOrWhiteSpace(key.TrangThai) ? "Chưa bán" : key.TrangThai.Trim();
+            key.LoaiKey = string.IsNullOrWhiteSpace(key.LoaiKey) ? "Mã kích hoạt" : key.LoaiKey.Trim();
+            key.TrangThai = string.IsNullOrWhiteSpace(key.TrangThai) ? "Còn trống" : key.TrangThai.Trim();
             key.DoiTacId = key.DoiTacId == 0 ? null : key.DoiTacId;
             key.GhiChu = key.GhiChu?.Trim();
             key.NgayTao = DateTime.Now;
 
             _context.Khokeys.Add(key);
             
-            // Cập nhật số lượng key còn lại trong gói bản quyền nếu là Chưa bán
-            if (key.TrangThai == "Chưa bán")
+            // Cập nhật số lượng key còn lại trong gói bản quyền nếu là Còn trống
+            if (key.TrangThai == "Còn trống")
             {
                 var goi = await _context.Goibanquyens.FindAsync(key.GoiBanQuyenId);
                 if (goi != null)
@@ -174,8 +174,8 @@ namespace WebBanPhanMem.Controllers
                     GoiBanQuyenId = goiBanQuyenId,
                     DoiTacId = doiTacId == 0 ? null : doiTacId,
                     MaKey = keyStr,
-                    LoaiKey = string.IsNullOrWhiteSpace(loaiKey) ? "Retail" : loaiKey,
-                    TrangThai = "Chưa bán",
+                    LoaiKey = string.IsNullOrWhiteSpace(loaiKey) ? "Mã kích hoạt" : loaiKey,
+                    TrangThai = "Còn trống",
                     GhiChu = ghiChu?.Trim(),
                     NgayTao = DateTime.Now
                 };
@@ -211,8 +211,8 @@ namespace WebBanPhanMem.Controllers
             item.GoiBanQuyenId = key.GoiBanQuyenId;
             item.DoiTacId = key.DoiTacId == 0 ? null : key.DoiTacId;
             item.MaKey = key.MaKey.Trim();
-            item.LoaiKey = key.LoaiKey;
-            item.TrangThai = key.TrangThai;
+            item.LoaiKey = string.IsNullOrWhiteSpace(key.LoaiKey) ? "Mã kích hoạt" : key.LoaiKey;
+            item.TrangThai = string.IsNullOrWhiteSpace(key.TrangThai) ? "Còn trống" : key.TrangThai;
             item.GhiChu = key.GhiChu?.Trim();
 
             // Cập nhật số key khả dụng của gói nếu thay đổi trạng thái
@@ -221,11 +221,11 @@ namespace WebBanPhanMem.Controllers
                 var goi = await _context.Goibanquyens.FindAsync(item.GoiBanQuyenId);
                 if (goi != null)
                 {
-                    if (oldStatus == "Chưa bán" && item.TrangThai != "Chưa bán")
+                    if (oldStatus == "Còn trống" && item.TrangThai != "Còn trống")
                     {
                         goi.SoKeyConLai = Math.Max(0, goi.SoKeyConLai - 1);
                     }
-                    else if (oldStatus != "Chưa bán" && item.TrangThai == "Chưa bán")
+                    else if (oldStatus != "Còn trống" && item.TrangThai == "Còn trống")
                     {
                         goi.SoKeyConLai += 1;
                     }
@@ -251,11 +251,11 @@ namespace WebBanPhanMem.Controllers
                 var goi = await _context.Goibanquyens.FindAsync(item.GoiBanQuyenId);
                 if (goi != null)
                 {
-                    if (oldStatus == "Chưa bán" && status != "Chưa bán")
+                    if (oldStatus == "Còn trống" && status != "Còn trống")
                     {
                         goi.SoKeyConLai = Math.Max(0, goi.SoKeyConLai - 1);
                     }
-                    else if (oldStatus != "Chưa bán" && status == "Chưa bán")
+                    else if (oldStatus != "Còn trống" && status == "Còn trống")
                     {
                         goi.SoKeyConLai += 1;
                     }
@@ -285,7 +285,7 @@ namespace WebBanPhanMem.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            if (item.TrangThai == "Chưa bán")
+            if (item.TrangThai == "Còn trống")
             {
                 var goi = await _context.Goibanquyens.FindAsync(item.GoiBanQuyenId);
                 if (goi != null)
