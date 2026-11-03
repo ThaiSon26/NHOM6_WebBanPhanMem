@@ -5,12 +5,13 @@
 
     var allKeys = Model ?? new List<WebBanPhanMem.Models.Khokey>();
     int totalCount = allKeys.Count;
-    int availableCount = allKeys.Count(k => k.TrangThai == "Chưa bán");
+    int availableCount = allKeys.Count(k => k.TrangThai == "Còn trống");
     int soldCount = allKeys.Count(k => k.TrangThai == "Đã bán");
-    int errorCount = allKeys.Count(k => k.TrangThai == "Lỗi/Thu hồi" || k.TrangThai == "Đã bảo lưu");
+    int errorCount = allKeys.Count(k => k.TrangThai == "Lỗi" || k.TrangThai == "Thu hồi");
 
     var goiList = ViewBag.GoiBanQuyenList as List<WebBanPhanMem.Models.Goibanquyen> ?? new();
     var doiTacList = ViewBag.DoiTacList as List<WebBanPhanMem.Models.Doitac> ?? new();
+    var sanPhamList = ViewBag.SanPhamList as List<WebBanPhanMem.Models.Sanpham> ?? new();
 
     string searchTerm = ViewBag.SearchTerm as string ?? "";
     uint? selectedGoi = ViewBag.SelectedGoiId as uint?;
@@ -69,7 +70,7 @@
             </div>
             <div>
                 <div class="stat-value">@availableCount</div>
-                <div class="stat-label">Key khả dụng (Chưa bán)</div>
+                <div class="stat-label">Key còn trống (Sẵn sàng bán)</div>
             </div>
         </div>
 
@@ -122,10 +123,11 @@
                 </select>
                 <select name="trangThai" class="form-select filter-select">
                     <option value="">-- Trạng thái key --</option>
-                    <option value="Chưa bán" selected="@(selectedTrangThai == "Chưa bán")">Chưa bán</option>
+                    <option value="Còn trống" selected="@(selectedTrangThai == "Còn trống")">Còn trống</option>
                     <option value="Đã bán" selected="@(selectedTrangThai == "Đã bán")">Đã bán</option>
-                    <option value="Lỗi/Thu hồi" selected="@(selectedTrangThai == "Lỗi/Thu hồi")">Lỗi/Thu hồi</option>
-                    <option value="Đã bảo lưu" selected="@(selectedTrangThai == "Đã bảo lưu")">Đã bảo lưu</option>
+                    <option value="Đã giữ chỗ" selected="@(selectedTrangThai == "Đã giữ chỗ")">Đã giữ chỗ</option>
+                    <option value="Lỗi" selected="@(selectedTrangThai == "Lỗi")">Lỗi</option>
+                    <option value="Thu hồi" selected="@(selectedTrangThai == "Thu hồi")">Thu hồi</option>
                 </select>
                 <button type="submit" class="btn btn-primary">
                     <i class="bi bi-funnel me-1"></i>Lọc
@@ -194,16 +196,22 @@
                                 <small class="text-muted">@(k.DoiTac?.TenDoiTac ?? "Tự nhập")</small>
                             </td>
                             <td>
-                                @if (k.TrangThai == "Chưa bán")
+                                @if (k.TrangThai == "Còn trống")
                                 {
                                     <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
-                                        <i class="bi bi-check-circle me-1"></i>Chưa bán
+                                        <i class="bi bi-check-circle me-1"></i>Còn trống
                                     </span>
                                 }
                                 else if (k.TrangThai == "Đã bán")
                                 {
                                     <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">
                                         <i class="bi bi-bag-check me-1"></i>Đã bán
+                                    </span>
+                                }
+                                else if (k.TrangThai == "Đã giữ chỗ")
+                                {
+                                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1">
+                                        <i class="bi bi-clock-history me-1"></i>Đã giữ chỗ
                                     </span>
                                 }
                                 else
@@ -258,7 +266,19 @@
                 <div class="modal-body">
                     <div class="row g-3">
                         <div class="col-12">
-                            <label class="form-label fw-semibold">Gói bản quyền áp dụng <span class="text-danger">*</span></label>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label fw-semibold mb-0">Gói bản quyền áp dụng <span class="text-danger">*</span></label>
+                                <button type="button" class="btn btn-link p-0 text-decoration-none small fw-semibold" data-bs-toggle="modal" data-bs-target="#modalTaoNhanhGoi">
+                                    <i class="bi bi-plus-circle me-1"></i>Tạo gói mới
+                                </button>
+                            </div>
+                            @if (!goiList.Any())
+                            {
+                                <div class="alert alert-warning py-2 px-3 small rounded-3 mb-2">
+                                    <i class="bi bi-exclamation-circle me-1"></i> Chưa có gói bản quyền nào trong CSDL! 
+                                    <a href="javascript:void(0)" class="fw-bold text-dark ms-1" data-bs-toggle="modal" data-bs-target="#modalTaoNhanhGoi">Bấm vào đây để tạo nhanh gói</a>
+                                </div>
+                            }
                             <select name="GoiBanQuyenId" class="form-select" required>
                                 <option value="">-- Chọn phần mềm & gói --</option>
                                 @foreach (var g in goiList)
@@ -274,10 +294,9 @@
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Loại Key</label>
                             <select name="LoaiKey" class="form-select">
-                                <option value="Retail">Retail (Bán lẻ)</option>
-                                <option value="OEM">OEM (Theo máy)</option>
-                                <option value="Volume (MAK/KMS)">Volume (Doanh nghiệp)</option>
-                                <option value="Account">Account / Email</option>
+                                <option value="Mã kích hoạt">Mã kích hoạt</option>
+                                <option value="Tài khoản">Tài khoản</option>
+                                <option value="Link tải">Link tải</option>
                             </select>
                         </div>
                         <div class="col-md-6">
@@ -318,7 +337,12 @@
                 <div class="modal-body">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Gói bản quyền áp dụng <span class="text-danger">*</span></label>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label fw-semibold mb-0">Gói bản quyền áp dụng <span class="text-danger">*</span></label>
+                                <button type="button" class="btn btn-link p-0 text-decoration-none small fw-semibold" data-bs-toggle="modal" data-bs-target="#modalTaoNhanhGoi">
+                                    <i class="bi bi-plus-circle me-1"></i>Tạo gói mới
+                                </button>
+                            </div>
                             <select name="goiBanQuyenId" class="form-select" required>
                                 <option value="">-- Chọn gói bản quyền áp dụng --</option>
                                 @foreach (var g in goiList)
@@ -330,10 +354,9 @@
                         <div class="col-md-3">
                             <label class="form-label fw-semibold">Loại Key</label>
                             <select name="loaiKey" class="form-select">
-                                <option value="Retail">Retail</option>
-                                <option value="OEM">OEM</option>
-                                <option value="Volume (MAK/KMS)">Volume</option>
-                                <option value="Account">Account</option>
+                                <option value="Mã kích hoạt">Mã kích hoạt</option>
+                                <option value="Tài khoản">Tài khoản</option>
+                                <option value="Link tải">Link tải</option>
                             </select>
                         </div>
                         <div class="col-md-3">
@@ -397,19 +420,19 @@
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Loại Key</label>
                             <select name="LoaiKey" id="editLoaiKey" class="form-select">
-                                <option value="Retail">Retail</option>
-                                <option value="OEM">OEM</option>
-                                <option value="Volume (MAK/KMS)">Volume</option>
-                                <option value="Account">Account</option>
+                                <option value="Mã kích hoạt">Mã kích hoạt</option>
+                                <option value="Tài khoản">Tài khoản</option>
+                                <option value="Link tải">Link tải</option>
                             </select>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Trạng thái Key</label>
                             <select name="TrangThai" id="editTrangThai" class="form-select">
-                                <option value="Chưa bán">Chưa bán</option>
+                                <option value="Còn trống">Còn trống</option>
                                 <option value="Đã bán">Đã bán</option>
-                                <option value="Lỗi/Thu hồi">Lỗi/Thu hồi</option>
-                                <option value="Đã bảo lưu">Đã bảo lưu</option>
+                                <option value="Đã giữ chỗ">Đã giữ chỗ</option>
+                                <option value="Lỗi">Lỗi</option>
+                                <option value="Thu hồi">Thu hồi</option>
                             </select>
                         </div>
                         <div class="col-md-12">
@@ -458,6 +481,65 @@
                     <button type="submit" class="btn btn-danger btn-sm"><i class="bi bi-trash me-1"></i>Xóa</button>
                 </form>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== Modal Tạo Nhanh Gói Bản Quyền ===== -->
+<div class="modal fade admin-modal" id="modalTaoNhanhGoi" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-box-seam me-2 text-primary"></i>Tạo nhanh Gói bản quyền</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="CreateQuickGoi" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Thuộc Sản phẩm phần mềm nào <span class="text-danger">*</span></label>
+                            @if (!sanPhamList.Any())
+                            {
+                                <div class="alert alert-warning py-2 px-3 small rounded-3 mb-2">
+                                    <i class="bi bi-info-circle me-1"></i> Chưa có sản phẩm nào! Vui lòng vào menu <a href="/Admin/SanPham" class="fw-bold">Sản phẩm</a> tạo trước.
+                                </div>
+                            }
+                            <select name="sanPhamId" class="form-select" required>
+                                <option value="">-- Chọn phần mềm --</option>
+                                @foreach (var sp in sanPhamList)
+                                {
+                                    <option value="@sp.Id">@sp.TenSanPham</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-8">
+                            <label class="form-label fw-semibold">Tên gói bản quyền <span class="text-danger">*</span></label>
+                            <input type="text" name="tenGoi" class="form-control" placeholder="VD: 1 Năm / 1 PC, Vĩnh viễn..." required />
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label fw-semibold">Mã hàng (SKU)</label>
+                            <input type="text" name="maHang" class="form-control font-mono" placeholder="VD: WIN11-PRO" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold">Giá bán (₫) <span class="text-danger">*</span></label>
+                            <input type="number" name="gia" class="form-control" placeholder="350000" min="0" value="199000" required />
+                        </div>
+                        <div class="col-3">
+                            <label class="form-label fw-semibold">Số máy</label>
+                            <input type="number" name="soMay" class="form-control" value="1" min="1" required />
+                        </div>
+                        <div class="col-3">
+                            <label class="form-label fw-semibold">Bảo hành (ngày)</label>
+                            <input type="number" name="baoHanh" class="form-control" value="365" min="0" required />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle me-1"></i>Lưu gói</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
