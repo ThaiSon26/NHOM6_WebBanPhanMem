@@ -45,7 +45,12 @@
                 @{
                     var currentPath = Context.Request.Path.Value?.ToLower() ?? "";
                     bool isOverview = currentPath == "/admin" || currentPath == "/admin/index" || currentPath == "/admin/dashboard";
-                    bool isDanhMuc = currentPath.Contains("danhmuc");
+                    bool isDanhMuc  = currentPath.Contains("danhmuc");
+                    bool isSanPham  = currentPath.Contains("sanpham");
+                    bool isDonHang  = currentPath.Contains("donhang");
+                    bool isNguoiDung = currentPath.Contains("nguoidung") || currentPath.Contains("account");
+                    bool isThongKe  = currentPath.Contains("thongke");
+                    bool isCaiDat   = currentPath.Contains("caidat");
                 }
 
                 <a href="/Admin" class="nav-link-item @(isOverview ? "active" : "")">
@@ -64,44 +69,44 @@
                     <i class="bi bi-chevron-right nav-chevron"></i>
                 </a>
 
-                <a href="#" class="nav-link-item" onclick="alert('Module Quản lý Sản phẩm đang được cập nhật!'); return false;">
+                <a href="/Admin/SanPham" class="nav-link-item @(isSanPham ? "active" : "")">
                     <div class="nav-link-item-left">
-                        <i class="bi bi-laptop nav-icon"></i>
+                        <i class="bi bi-box-seam-fill nav-icon"></i>
                         <span class="nav-text">Sản phẩm</span>
                     </div>
                     <i class="bi bi-chevron-right nav-chevron"></i>
                 </a>
 
-                <a href="#" class="nav-link-item" onclick="alert('Module Quản lý Đơn hàng đang được cập nhật!'); return false;">
+                <a href="#" class="nav-link-item @(isDonHang ? "active" : "")" title="Sắp ra mắt">
                     <div class="nav-link-item-left">
                         <i class="bi bi-receipt-cutoff nav-icon"></i>
                         <span class="nav-text">Đơn hàng</span>
                     </div>
-                    <i class="bi bi-chevron-right nav-chevron"></i>
+                    <span class="nav-badge">Soon</span>
                 </a>
 
-                <a href="#" class="nav-link-item" onclick="alert('Module Quản lý Người dùng đang được cập nhật!'); return false;">
+                <a href="#" class="nav-link-item @(isNguoiDung ? "active" : "")" title="Sắp ra mắt">
                     <div class="nav-link-item-left">
-                        <i class="bi bi-person-fill nav-icon"></i>
+                        <i class="bi bi-people-fill nav-icon"></i>
                         <span class="nav-text">Người dùng</span>
                     </div>
-                    <i class="bi bi-chevron-right nav-chevron"></i>
+                    <span class="nav-badge">Soon</span>
                 </a>
 
-                <a href="#" class="nav-link-item" onclick="alert('Module Thống kê nâng cao đang được cập nhật!'); return false;">
+                <a href="#" class="nav-link-item @(isThongKe ? "active" : "")" title="Sắp ra mắt">
                     <div class="nav-link-item-left">
                         <i class="bi bi-bar-chart-line-fill nav-icon"></i>
                         <span class="nav-text">Thống kê</span>
                     </div>
-                    <i class="bi bi-chevron-right nav-chevron"></i>
+                    <span class="nav-badge">Soon</span>
                 </a>
 
-                <a href="#" class="nav-link-item" onclick="alert('Module Cài đặt đang được cập nhật!'); return false;">
+                <a href="#" class="nav-link-item @(isCaiDat ? "active" : "")" title="Sắp ra mắt">
                     <div class="nav-link-item-left">
                         <i class="bi bi-gear-fill nav-icon"></i>
                         <span class="nav-text">Cài đặt</span>
                     </div>
-                    <i class="bi bi-chevron-right nav-chevron"></i>
+                    <span class="nav-badge">Soon</span>
                 </a>
             </nav>
 

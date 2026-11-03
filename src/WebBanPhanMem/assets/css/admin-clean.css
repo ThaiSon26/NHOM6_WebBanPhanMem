@@ -815,3 +815,382 @@ body {
         width: 100%;
     }
 }
+
+
+/* =====================================================
+   NAV BADGE (Soon / New labels trên sidebar)
+   ===================================================== */
+.nav-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 20px;
+    background: #f1f5f9;
+    color: #94a3b8;
+    letter-spacing: 0.3px;
+    margin-left: auto;
+}
+
+.nav-link-item.active .nav-badge {
+    background: rgba(255,255,255,0.15);
+    color: rgba(255,255,255,0.7);
+}
+
+/* =====================================================
+   SANPHAM — PAGE WRAPPER & HEADER
+   ===================================================== */
+.page-header-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.page-title {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text-heading);
+    margin: 0 0 2px;
+}
+
+.page-subtitle {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.btn-add {
+    white-space: nowrap;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    padding: 10px 20px;
+}
+
+/* =====================================================
+   BENTO STATS ROW (SanPham + generic)
+   ===================================================== */
+.bento-stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 20px;
+}
+
+.bento-stat-card {
+    background: #fff;
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-card);
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: var(--shadow-card);
+    transition: var(--transition);
+}
+
+.bento-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px -4px rgba(15,23,42,0.08);
+}
+
+.stat-icon {
+    width: 48px; height: 48px;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.bg-primary-soft  { background: #eff6ff; }
+.bg-success-soft  { background: #f0fdf4; }
+.bg-warning-soft  { background: #fffbeb; }
+.bg-info-soft     { background: #f0f9ff; }
+.bg-danger-soft   { background: #fff1f2; }
+
+.stat-value {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--text-heading);
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+/* =====================================================
+   FILTER BAR
+   ===================================================== */
+.filter-bar {
+    margin-bottom: 16px;
+    padding: 16px 20px;
+}
+
+.filter-form {
+    display: flex;
+    align-items: center;
+}
+
+.filter-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+.search-input-wrap {
+    position: relative;
+    flex: 1;
+    min-width: 220px;
+}
+
+.search-icon-inner {
+    position: absolute;
+    left: 12px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 14px;
+    pointer-events: none;
+}
+
+.search-input {
+    padding-left: 36px !important;
+    border-radius: var(--radius-sm) !important;
+    border: 1px solid var(--border-card) !important;
+    font-size: 13px;
+}
+
+.filter-select {
+    border-radius: var(--radius-sm) !important;
+    border: 1px solid var(--border-card) !important;
+    font-size: 13px;
+    min-width: 160px;
+}
+
+/* =====================================================
+   PRODUCT CELL (Table row)
+   ===================================================== */
+.product-cell {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.product-thumb {
+    width: 44px; height: 44px;
+    border-radius: 10px;
+    object-fit: cover;
+    border: 1px solid var(--border-card);
+    flex-shrink: 0;
+}
+
+.product-thumb-placeholder {
+    width: 44px; height: 44px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #eff6ff, #dbeafe);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    color: var(--primary-blue);
+    flex-shrink: 0;
+    border: 1px solid #bfdbfe;
+}
+
+.badge-category {
+    background: #f0f4ff;
+    color: var(--primary-indigo);
+    border: 1px solid #c7d2fe;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+}
+
+.badge-package-link {
+    background: #f0fdf4;
+    color: #16a34a;
+    border: 1px solid #bbf7d0;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    transition: var(--transition);
+}
+
+.badge-package-link:hover {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+/* =====================================================
+   DETAIL PAGE — Product Info
+   ===================================================== */
+.breadcrumb-sm {
+    font-size: 12px;
+    margin: 0;
+}
+.breadcrumb-sm a {
+    color: var(--primary-blue);
+    text-decoration: none;
+}
+
+.product-detail-img {
+    width: 120px; height: 120px;
+    border-radius: 20px;
+    object-fit: cover;
+    border: 2px solid var(--border-card);
+    box-shadow: var(--shadow-card);
+}
+
+.product-detail-placeholder {
+    width: 120px; height: 120px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, #eff6ff, #dbeafe);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 48px;
+    color: var(--primary-blue);
+    margin: 0 auto;
+    border: 2px solid #bfdbfe;
+}
+
+.info-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 13px;
+}
+
+.info-label {
+    color: var(--text-muted);
+    flex-shrink: 0;
+    font-weight: 500;
+}
+
+.info-value {
+    color: var(--text-heading);
+    text-align: right;
+    word-break: break-all;
+}
+
+.font-mono { font-family: 'JetBrains Mono', monospace; }
+
+/* =====================================================
+   PACKAGE CARDS (Gói bản quyền)
+   ===================================================== */
+.package-card {
+    background: #fff;
+    border: 1.5px solid var(--border-card);
+    border-radius: var(--radius-card);
+    padding: 18px;
+    transition: var(--transition);
+    height: 100%;
+}
+
+.package-card:hover {
+    border-color: #bfdbfe;
+    box-shadow: 0 4px 16px -4px rgba(37,99,235,0.12);
+    transform: translateY(-2px);
+}
+
+.package-inactive {
+    opacity: 0.6;
+    border-style: dashed;
+}
+
+.package-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.package-price-row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.price-current {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--primary-blue);
+}
+
+.price-original {
+    font-size: 13px;
+    color: var(--text-muted);
+    text-decoration: line-through;
+}
+
+.package-specs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.spec-tag {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 3px 8px;
+    font-size: 11px;
+    color: var(--text-body);
+    display: inline-flex;
+    align-items: center;
+}
+
+/* Extra-small action buttons for package cards */
+.btn-action.btn-xs {
+    width: 28px; height: 28px;
+    font-size: 12px;
+    border-radius: 7px;
+}
+
+/* =====================================================
+   BENTO ALERT
+   ===================================================== */
+.bento-alert {
+    border-radius: var(--radius-sm);
+    border: none;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 16px;
+}
+
+/* =====================================================
+   RESPONSIVE — SanPham
+   ===================================================== */
+@media (max-width: 991px) {
+    .bento-stats-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 576px) {
+    .bento-stats-row {
+        grid-template-columns: 1fr 1fr;
+    }
+    .filter-group {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .page-header-bar {
+        flex-direction: column;
+    }
+}

@@ -1,0 +1,378 @@
+@model WebBanPhanMem.Models.Sanpham
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Chi tiết: " + Model.TenSanPham;
+}
+
+<div class="admin-page-wrapper">
+    <!-- Page Header -->
+    <div class="page-header-bar">
+        <div>
+            <nav aria-label="breadcrumb" class="mb-1">
+                <ol class="breadcrumb breadcrumb-sm">
+                    <li class="breadcrumb-item"><a href="/Admin">Tổng quan</a></li>
+                    <li class="breadcrumb-item"><a href="/Admin/SanPham">Sản phẩm</a></li>
+                    <li class="breadcrumb-item active">@Model.TenSanPham</li>
+                </ol>
+            </nav>
+            <h1 class="page-title"><i class="bi bi-box-seam-fill me-2 text-primary"></i>@Model.TenSanPham</h1>
+            <p class="page-subtitle">/@Model.DuongDan · Danh mục: <strong>@(Model.DanhMuc?.TenDanhMuc ?? "—")</strong></p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/Admin/SanPham" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Quay lại
+            </a>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalThemGoi">
+                <i class="bi bi-plus-circle me-1"></i>Thêm gói BQ
+            </button>
+        </div>
+    </div>
+
+    <!-- Alerts -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show bento-alert" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Bento Grid Layout: Info + Packages -->
+    <div class="row g-4">
+
+        <!-- LEFT: Product Info -->
+        <div class="col-lg-4">
+            <div class="bento-card h-100">
+                <div class="text-center mb-4">
+                    @if (!string.IsNullOrEmpty(Model.AnhDaiDien))
+                    {
+                        <img src="@Model.AnhDaiDien" alt="@Model.TenSanPham" class="product-detail-img"
+                             onerror="this.src='/img/no-image.png'" />
+                    }
+                    else
+                    {
+                        <div class="product-detail-placeholder">
+                            <i class="bi bi-box-seam"></i>
+                        </div>
+                    }
+                    <h4 class="fw-bold mt-3 mb-1">@Model.TenSanPham</h4>
+                    @if (Model.LaNoiBat)
+                    {
+                        <span class="badge bg-warning text-dark mb-2"><i class="bi bi-star-fill me-1"></i>Nổi bật</span>
+                    }
+                    <div>
+                        @if (Model.ConHoatDong == true)
+                        {
+                            <span class="badge bg-success-subtle text-success px-3 py-2">
+                                <i class="bi bi-check-circle-fill me-1"></i>Đang hoạt động
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary-subtle text-secondary px-3 py-2">
+                                <i class="bi bi-pause-circle-fill me-1"></i>Đang ẩn
+                            </span>
+                        }
+                    </div>
+                </div>
+
+                <hr class="my-3" />
+
+                <div class="info-list">
+                    <div class="info-row">
+                        <span class="info-label"><i class="bi bi-folder2 me-1"></i>Danh mục</span>
+                        <span class="info-value">@(Model.DanhMuc?.TenDanhMuc ?? "—")</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label"><i class="bi bi-link-45deg me-1"></i>Đường dẫn</span>
+                        <span class="info-value font-mono text-primary">//@Model.DuongDan</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label"><i class="bi bi-eye me-1"></i>Lượt xem</span>
+                        <span class="info-value fw-semibold">@Model.LuotXem.ToString("N0")</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label"><i class="bi bi-key me-1"></i>Gói bản quyền</span>
+                        <span class="info-value fw-semibold text-primary">@Model.Goibanquyens.Count gói</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label"><i class="bi bi-calendar3 me-1"></i>Ngày tạo</span>
+                        <span class="info-value">@Model.NgayTao.ToString("dd/MM/yyyy HH:mm")</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label"><i class="bi bi-pencil-square me-1"></i>Cập nhật</span>
+                        <span class="info-value">@Model.NgayCapNhat.ToString("dd/MM/yyyy HH:mm")</span>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(Model.MoTaNgan))
+                {
+                    <hr class="my-3" />
+                    <p class="text-muted small mb-0"><i class="bi bi-chat-text me-1"></i>@Model.MoTaNgan</p>
+                }
+            </div>
+        </div>
+
+        <!-- RIGHT: License Packages -->
+        <div class="col-lg-8">
+            <div class="bento-card">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-key-fill text-primary me-2"></i>Các gói bản quyền</h5>
+                    <span class="badge bg-primary-subtle text-primary px-3 py-2">@Model.Goibanquyens.Count gói</span>
+                </div>
+
+                @if (!Model.Goibanquyens.Any())
+                {
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-key fs-1 d-block mb-3 opacity-25"></i>
+                        <p>Chưa có gói bản quyền nào.</p>
+                        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalThemGoi">
+                            <i class="bi bi-plus me-1"></i>Thêm gói đầu tiên
+                        </button>
+                    </div>
+                }
+                else
+                {
+                    <div class="row g-3">
+                        @foreach (var goi in Model.Goibanquyens.OrderBy(g => g.Gia))
+                        {
+                            <div class="col-md-6">
+                                <div class="package-card @(goi.ConHoatDong == true ? "" : "package-inactive")">
+                                    <!-- Package Header -->
+                                    <div class="package-header">
+                                        <div>
+                                            <div class="fw-semibold text-dark">@goi.TenGoiBanQuyen</div>
+                                            <code class="text-muted font-mono small">@goi.MaHang</code>
+                                        </div>
+                                        <div class="d-flex gap-1">
+                                            <button class="btn-action btn-edit btn-xs"
+                                                    onclick="openEditGoi(@goi.Id, @Model.Id, '@goi.TenGoiBanQuyen.Replace("'","\\'")', '@goi.MaHang', @goi.Gia, @(goi.GiaKhuyenMai?.ToString() ?? "0"), @(goi.ThoiHanNgay?.ToString() ?? "0"), @goi.SoMayToiDa, @goi.BaoHanhNgay, @(goi.ConHoatDong == true ? "true" : "false"))"
+                                                    title="Sửa gói">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button class="btn-action btn-delete btn-xs"
+                                                    onclick="confirmDeleteGoi(@goi.Id, @Model.Id, '@goi.TenGoiBanQuyen.Replace("'","\\'")')"
+                                                    title="Xóa gói">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Package Price -->
+                                    <div class="package-price-row">
+                                        @if (goi.GiaKhuyenMai.HasValue && goi.GiaKhuyenMai > 0)
+                                        {
+                                            <span class="price-current">@goi.GiaKhuyenMai.Value.ToString("N0")₫</span>
+                                            <span class="price-original">@goi.Gia.ToString("N0")₫</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="price-current">@goi.Gia.ToString("N0")₫</span>
+                                        }
+                                    </div>
+
+                                    <!-- Package Specs -->
+                                    <div class="package-specs">
+                                        <span class="spec-tag">
+                                            <i class="bi bi-clock me-1"></i>
+                                            @(goi.ThoiHanNgay.HasValue ? $"{goi.ThoiHanNgay} ngày" : "Vĩnh viễn")
+                                        </span>
+                                        <span class="spec-tag">
+                                            <i class="bi bi-pc-display me-1"></i>@goi.SoMayToiDa máy
+                                        </span>
+                                        <span class="spec-tag">
+                                            <i class="bi bi-shield-check me-1"></i>BH @goi.BaoHanhNgay ngày
+                                        </span>
+                                        <span class="spec-tag">
+                                            <i class="bi bi-key me-1"></i>@goi.SoKeyConLai key
+                                        </span>
+                                    </div>
+
+                                    <!-- Status Badge -->
+                                    <div class="mt-2">
+                                        @if (goi.ConHoatDong == true)
+                                        {
+                                            <span class="badge bg-success-subtle text-success">Hoạt động</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary-subtle text-secondary">Tạm ẩn</span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== Modal Thêm Gói BQ ===== -->
+<div class="modal fade admin-modal" id="modalThemGoi" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-plus-circle me-2"></i>Thêm gói bản quyền</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="AddGoiBanQuyen" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="SanPhamId" value="@Model.Id" />
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-8">
+                            <label class="form-label fw-semibold">Tên gói <span class="text-danger">*</span></label>
+                            <input type="text" name="TenGoiBanQuyen" class="form-control" placeholder="VD: 1 năm / 1 máy" required />
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label fw-semibold">Mã hàng <span class="text-danger">*</span></label>
+                            <input type="text" name="MaHang" class="form-control" placeholder="SKU" required />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold">Giá gốc (₫) <span class="text-danger">*</span></label>
+                            <input type="number" name="Gia" class="form-control" placeholder="350000" min="0" required />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold">Giá KM (₫)</label>
+                            <input type="number" name="GiaKhuyenMai" class="form-control" placeholder="0 = không KM" min="0" value="0" />
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label fw-semibold">Thời hạn (ngày)</label>
+                            <input type="number" name="ThoiHanNgay" class="form-control" placeholder="0 = vĩnh viễn" min="0" value="0" />
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label fw-semibold">Số máy tối đa</label>
+                            <input type="number" name="SoMayToiDa" class="form-control" value="1" min="1" required />
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label fw-semibold">Bảo hành (ngày)</label>
+                            <input type="number" name="BaoHanhNgay" class="form-control" value="30" min="0" required />
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="ConHoatDong" value="true" id="goiHoatDong" checked>
+                                <label class="form-check-label" for="goiHoatDong">Kích hoạt gói này</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-plus-circle me-1"></i>Thêm gói</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ===== Modal Sửa Gói BQ ===== -->
+<div class="modal fade admin-modal" id="modalSuaGoi" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-pencil-square me-2"></i>Sửa gói bản quyền</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="EditGoiBanQuyen" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id" id="editGoiId" />
+                <input type="hidden" name="SanPhamId" id="editGoiSPId" />
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-8">
+                            <label class="form-label fw-semibold">Tên gói</label>
+                            <input type="text" name="TenGoiBanQuyen" id="editGoiTen" class="form-control" required />
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label fw-semibold">Mã hàng</label>
+                            <input type="text" name="MaHang" id="editGoiMa" class="form-control" required />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold">Giá gốc (₫)</label>
+                            <input type="number" name="Gia" id="editGoiGia" class="form-control" min="0" required />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold">Giá KM (₫)</label>
+                            <input type="number" name="GiaKhuyenMai" id="editGoiKM" class="form-control" min="0" />
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label fw-semibold">Thời hạn (ngày)</label>
+                            <input type="number" name="ThoiHanNgay" id="editGoiThoiHan" class="form-control" min="0" />
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label fw-semibold">Số máy</label>
+                            <input type="number" name="SoMayToiDa" id="editGoiMay" class="form-control" min="1" required />
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label fw-semibold">Bảo hành (ngày)</label>
+                            <input type="number" name="BaoHanhNgay" id="editGoiBH" class="form-control" min="0" required />
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="ConHoatDong" value="true" id="editGoiHoatDong">
+                                <label class="form-check-label" for="editGoiHoatDong">Kích hoạt gói này</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i>Lưu thay đổi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ===== Modal Xóa Gói ===== -->
+<div class="modal fade admin-modal" id="modalXoaGoi" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Xóa gói</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <p>Xóa gói bản quyền:</p>
+                <p class="fw-bold text-dark" id="xoaGoiTen"></p>
+            </div>
+            <div class="modal-footer border-0">
+                <form asp-action="DeleteGoiBanQuyen" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" id="xoaGoiId" />
+                    <input type="hidden" name="sanPhamId" id="xoaGoiSPId" />
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-danger btn-sm"><i class="bi bi-trash me-1"></i>Xóa</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function openEditGoi(id, spId, ten, ma, gia, km, thoihan, soMay, baohanh, hoatDong) {
+        document.getElementById('editGoiId').value = id;
+        document.getElementById('editGoiSPId').value = spId;
+        document.getElementById('editGoiTen').value = ten;
+        document.getElementById('editGoiMa').value = ma;
+        document.getElementById('editGoiGia').value = gia;
+        document.getElementById('editGoiKM').value = km;
+        document.getElementById('editGoiThoiHan').value = thoihan;
+        document.getElementById('editGoiMay').value = soMay;
+        document.getElementById('editGoiBH').value = baohanh;
+        document.getElementById('editGoiHoatDong').checked = hoatDong;
+        new bootstrap.Modal(document.getElementById('modalSuaGoi')).show();
+    }
+
+    function confirmDeleteGoi(id, spId, ten) {
+        document.getElementById('xoaGoiId').value = id;
+        document.getElementById('xoaGoiSPId').value = spId;
+        document.getElementById('xoaGoiTen').textContent = ten;
+        new bootstrap.Modal(document.getElementById('modalXoaGoi')).show();
+    }
+</script>
+}
+

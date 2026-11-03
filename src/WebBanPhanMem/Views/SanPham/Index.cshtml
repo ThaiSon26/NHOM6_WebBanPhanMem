@@ -1,0 +1,382 @@
+@model List<WebBanPhanMem.Models.Sanpham>
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Quản lý Sản phẩm";
+    var danhMucList = ViewBag.DanhMucList as List<WebBanPhanMem.Models.Danhmuc> ?? new();
+    var searchTerm = ViewBag.SearchTerm as string ?? "";
+    var selectedDM = ViewBag.SelectedDanhMuc as uint?;
+    var selectedStatus = ViewBag.SelectedStatus as bool?;
+}
+
+<div class="admin-page-wrapper">
+    <!-- Page Header -->
+    <div class="page-header-bar">
+        <div>
+            <h1 class="page-title"><i class="bi bi-box-seam-fill me-2 text-primary"></i>Quản lý Sản phẩm</h1>
+            <p class="page-subtitle">Danh sách phần mềm bán bản quyền trong hệ thống</p>
+        </div>
+        <button class="btn btn-primary btn-add" data-bs-toggle="modal" data-bs-target="#modalThemSP">
+            <i class="bi bi-plus-circle me-1"></i> Thêm sản phẩm
+        </button>
+    </div>
+
+    <!-- Alerts -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show bento-alert" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show bento-alert" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Bento Stats Row -->
+    <div class="bento-stats-row">
+        <div class="bento-stat-card">
+            <div class="stat-icon bg-primary-soft"><i class="bi bi-box-seam text-primary"></i></div>
+            <div>
+                <div class="stat-value">@Model.Count</div>
+                <div class="stat-label">Tổng sản phẩm</div>
+            </div>
+        </div>
+        <div class="bento-stat-card">
+            <div class="stat-icon bg-success-soft"><i class="bi bi-check-circle text-success"></i></div>
+            <div>
+                <div class="stat-value">@Model.Count(s => s.ConHoatDong == true)</div>
+                <div class="stat-label">Đang hoạt động</div>
+            </div>
+        </div>
+        <div class="bento-stat-card">
+            <div class="stat-icon bg-warning-soft"><i class="bi bi-star-fill text-warning"></i></div>
+            <div>
+                <div class="stat-value">@Model.Count(s => s.LaNoiBat)</div>
+                <div class="stat-label">Sản phẩm nổi bật</div>
+            </div>
+        </div>
+        <div class="bento-stat-card">
+            <div class="stat-icon bg-info-soft"><i class="bi bi-key-fill text-info"></i></div>
+            <div>
+                <div class="stat-value">@Model.Sum(s => s.Goibanquyens.Count)</div>
+                <div class="stat-label">Gói bản quyền</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter & Search Bar -->
+    <div class="bento-card filter-bar">
+        <form method="get" action="@Url.Action("Index")" class="filter-form">
+            <div class="filter-group">
+                <div class="search-input-wrap">
+                    <i class="bi bi-search search-icon-inner"></i>
+                    <input type="text" name="search" class="form-control search-input"
+                           placeholder="Tìm tên sản phẩm hoặc đường dẫn..."
+                           value="@searchTerm" />
+                </div>
+                <select name="danhMucId" class="form-select filter-select">
+                    <option value="">-- Tất cả danh mục --</option>
+                    @foreach (var dm in danhMucList)
+                    {
+                        <option value="@dm.Id" selected="@(selectedDM == dm.Id)">@dm.TenDanhMuc</option>
+                    }
+                </select>
+                <select name="conHoatDong" class="form-select filter-select">
+                    <option value="">-- Mọi trạng thái --</option>
+                    <option value="true" selected="@(selectedStatus == true)">Hoạt động</option>
+                    <option value="false" selected="@(selectedStatus == false)">Ẩn</option>
+                </select>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-funnel me-1"></i>Lọc
+                </button>
+                <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-circle me-1"></i>Xóa lọc
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Product Table -->
+    <div class="bento-card table-card">
+        <div class="table-responsive">
+            <table class="table admin-table" id="spTable">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Sản phẩm</th>
+                        <th>Danh mục</th>
+                        <th>Gói BQ</th>
+                        <th>Lượt xem</th>
+                        <th>Nổi bật</th>
+                        <th>Trạng thái</th>
+                        <th>Ngày tạo</th>
+                        <th class="text-center">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="9" class="text-center py-5 text-muted">
+                                <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                                Chưa có sản phẩm nào. Nhấn <strong>Thêm sản phẩm</strong> để bắt đầu.
+                            </td>
+                        </tr>
+                    }
+                    @{ int idx = 1; }
+                    @foreach (var sp in Model)
+                    {
+                        <tr>
+                            <td class="text-muted">@idx</td>
+                            <td>
+                                <div class="product-cell">
+                                    @if (!string.IsNullOrEmpty(sp.AnhDaiDien))
+                                    {
+                                        <img src="@sp.AnhDaiDien" alt="@sp.TenSanPham" class="product-thumb" onerror="this.src='/img/no-image.png'"/>
+                                    }
+                                    else
+                                    {
+                                        <div class="product-thumb-placeholder"><i class="bi bi-box-seam"></i></div>
+                                    }
+                                    <div>
+                                        <div class="fw-semibold text-dark">@sp.TenSanPham</div>
+                                        <small class="text-muted">/@sp.DuongDan</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge badge-category">@(sp.DanhMuc?.TenDanhMuc ?? "—")</span>
+                            </td>
+                            <td>
+                                <a href="@Url.Action("Detail", new { id = sp.Id })" class="badge-package-link">
+                                    <i class="bi bi-key me-1"></i>@sp.Goibanquyens.Count gói
+                                </a>
+                            </td>
+                            <td><span class="text-muted">@sp.LuotXem.ToString("N0")</span></td>
+                            <td class="text-center">
+                                @if (sp.LaNoiBat)
+                                {
+                                    <i class="bi bi-star-fill text-warning"></i>
+                                }
+                                else
+                                {
+                                    <i class="bi bi-star text-muted"></i>
+                                }
+                            </td>
+                            <td>
+                                <form asp-action="ToggleStatus" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@sp.Id" />
+                                    <button type="submit" class="btn-status @(sp.ConHoatDong == true ? "status-active" : "status-inactive")">
+                                        @(sp.ConHoatDong == true ? "Hoạt động" : "Ẩn")
+                                    </button>
+                                </form>
+                            </td>
+                            <td><small class="text-muted">@sp.NgayTao.ToString("dd/MM/yyyy")</small></td>
+                            <td>
+                                <div class="action-buttons">
+                                    <a href="@Url.Action("Detail", new { id = sp.Id })" class="btn-action btn-info" title="Chi tiết & Gói BQ">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <button class="btn-action btn-edit" title="Sửa"
+                                            onclick="openEditModal(@sp.Id, '@sp.TenSanPham.Replace("'","\\'")', @sp.DanhMucId, '@sp.DuongDan', '@(sp.MoTaNgan?.Replace("'","\\'")??"" )', '@(sp.AnhDaiDien??"")', @(sp.LaNoiBat ? "true" : "false"), @(sp.ConHoatDong == true ? "true" : "false"))">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn-action btn-delete" title="Xóa"
+                                            onclick="confirmDelete(@sp.Id, '@sp.TenSanPham.Replace("'","\\'")')">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        idx++;
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ===== Modal Thêm Sản Phẩm ===== -->
+<div class="modal fade admin-modal" id="modalThemSP" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-plus-circle me-2"></i>Thêm sản phẩm mới</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="Create" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold">Tên sản phẩm <span class="text-danger">*</span></label>
+                            <input type="text" name="TenSanPham" class="form-control" placeholder="VD: Windows 11 Pro" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Danh mục <span class="text-danger">*</span></label>
+                            <select name="DanhMucId" class="form-select" required>
+                                <option value="">-- Chọn danh mục --</option>
+                                @foreach (var dm in danhMucList)
+                                {
+                                    <option value="@dm.Id">@dm.TenDanhMuc</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold">Đường dẫn (slug)</label>
+                            <input type="text" name="DuongDan" class="form-control" placeholder="tu-dong-tao-tu-ten" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Ảnh đại diện (URL)</label>
+                            <input type="text" name="AnhDaiDien" class="form-control" placeholder="https://..." />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Mô tả ngắn</label>
+                            <textarea name="MoTaNgan" class="form-control" rows="2" placeholder="Mô tả ngắn gọn về sản phẩm..."></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input" type="checkbox" name="LaNoiBat" value="true" id="chkNoiBat">
+                                <label class="form-check-label" for="chkNoiBat"><i class="bi bi-star-fill text-warning me-1"></i>Sản phẩm nổi bật</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input" type="checkbox" name="ConHoatDong" value="true" id="chkHoatDong" checked>
+                                <label class="form-check-label" for="chkHoatDong"><i class="bi bi-check-circle-fill text-success me-1"></i>Kích hoạt ngay</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-plus-circle me-1"></i>Thêm sản phẩm</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ===== Modal Sửa Sản Phẩm ===== -->
+<div class="modal fade admin-modal" id="modalSuaSP" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-pencil-square me-2"></i>Chỉnh sửa sản phẩm</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="Edit" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id" id="editId" />
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold">Tên sản phẩm <span class="text-danger">*</span></label>
+                            <input type="text" name="TenSanPham" id="editTen" class="form-control" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Danh mục <span class="text-danger">*</span></label>
+                            <select name="DanhMucId" id="editDanhMuc" class="form-select" required>
+                                @foreach (var dm in danhMucList)
+                                {
+                                    <option value="@dm.Id">@dm.TenDanhMuc</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold">Đường dẫn (slug)</label>
+                            <input type="text" name="DuongDan" id="editSlug" class="form-control" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Ảnh đại diện (URL)</label>
+                            <input type="text" name="AnhDaiDien" id="editAnh" class="form-control" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Mô tả ngắn</label>
+                            <textarea name="MoTaNgan" id="editMoTa" class="form-control" rows="2"></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input" type="checkbox" name="LaNoiBat" value="true" id="editNoiBat">
+                                <label class="form-check-label" for="editNoiBat"><i class="bi bi-star-fill text-warning me-1"></i>Sản phẩm nổi bật</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input" type="checkbox" name="ConHoatDong" value="true" id="editHoatDong">
+                                <label class="form-check-label" for="editHoatDong"><i class="bi bi-check-circle-fill text-success me-1"></i>Kích hoạt</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i>Lưu thay đổi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ===== Modal Xóa ===== -->
+<div class="modal fade admin-modal" id="modalXoaSP" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Xác nhận xóa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <p>Bạn có chắc muốn xóa sản phẩm:</p>
+                <p class="fw-bold text-dark" id="xoaTenSP"></p>
+                <p class="text-danger small">⚠ Hành động này không thể hoàn tác!</p>
+            </div>
+            <div class="modal-footer border-0">
+                <form asp-action="Delete" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" id="xoaId" />
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-danger btn-sm"><i class="bi bi-trash me-1"></i>Xóa</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    // Mở modal sửa và điền dữ liệu
+    function openEditModal(id, ten, danhMucId, slug, moTa, anh, laNoiBat, hoatDong) {
+        document.getElementById('editId').value = id;
+        document.getElementById('editTen').value = ten;
+        document.getElementById('editSlug').value = slug;
+        document.getElementById('editMoTa').value = moTa;
+        document.getElementById('editAnh').value = anh;
+        document.getElementById('editNoiBat').checked = laNoiBat;
+        document.getElementById('editHoatDong').checked = hoatDong;
+
+        const dmSelect = document.getElementById('editDanhMuc');
+        for (let opt of dmSelect.options) {
+            opt.selected = (opt.value == danhMucId);
+        }
+
+        new bootstrap.Modal(document.getElementById('modalSuaSP')).show();
+    }
+
+    // Mở modal xóa
+    function confirmDelete(id, ten) {
+        document.getElementById('xoaId').value = id;
+        document.getElementById('xoaTenSP').textContent = ten;
+        new bootstrap.Modal(document.getElementById('modalXoaSP')).show();
+    }
+
+    // Realtime filter trong bảng
+    document.getElementById('spTable')?.closest('.bento-card');
+</script>
+}
+
