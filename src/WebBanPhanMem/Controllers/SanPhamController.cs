@@ -24,6 +24,7 @@ namespace WebBanPhanMem.Controllers
         {
             var query = _context.Sanphams
                 .Include(s => s.DanhMuc)
+                .Include(s => s.DoiTac)
                 .Include(s => s.Goibanquyens)
                 .AsQueryable();
 
@@ -41,6 +42,11 @@ namespace WebBanPhanMem.Controllers
             ViewBag.DanhMucList = await _context.Danhmucs
                 .Where(d => d.ConHoatDong == true)
                 .OrderBy(d => d.ThuTu)
+                .ToListAsync();
+
+            ViewBag.DoiTacList = await _context.Doitacs
+                .Where(d => d.ConHoatDong == true)
+                .OrderBy(d => d.TenDoiTac)
                 .ToListAsync();
 
             ViewBag.SearchTerm = search;

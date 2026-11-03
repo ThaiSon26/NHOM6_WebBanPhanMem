@@ -3,6 +3,7 @@
     Layout = "_AdminLayout";
     ViewData["Title"] = "Quản lý Sản phẩm";
     var danhMucList = ViewBag.DanhMucList as List<WebBanPhanMem.Models.Danhmuc> ?? new();
+    var doiTacList = ViewBag.DoiTacList as List<WebBanPhanMem.Models.Doitac> ?? new();
     var searchTerm = ViewBag.SearchTerm as string ?? "";
     var selectedDM = ViewBag.SelectedDanhMuc as uint?;
     var selectedStatus = ViewBag.SelectedStatus as bool?;
@@ -109,6 +110,7 @@
                         <th>#</th>
                         <th>Sản phẩm</th>
                         <th>Danh mục</th>
+                        <th>Đối tác</th>
                         <th>Gói BQ</th>
                         <th>Lượt xem</th>
                         <th>Nổi bật</th>
@@ -121,7 +123,7 @@
                     @if (!Model.Any())
                     {
                         <tr>
-                            <td colspan="9" class="text-center py-5 text-muted">
+                            <td colspan="10" class="text-center py-5 text-muted">
                                 <i class="bi bi-inbox fs-2 d-block mb-2"></i>
                                 Chưa có sản phẩm nào. Nhấn <strong>Thêm sản phẩm</strong> để bắt đầu.
                             </td>
@@ -150,6 +152,9 @@
                             </td>
                             <td>
                                 <span class="badge badge-category">@(sp.DanhMuc?.TenDanhMuc ?? "—")</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border">@(sp.DoiTac?.TenDoiTac ?? "—")</span>
                             </td>
                             <td>
                                 <a href="@Url.Action("Detail", new { id = sp.Id })" class="badge-package-link">
@@ -183,7 +188,7 @@
                                         <i class="bi bi-eye"></i>
                                     </a>
                                     <button class="btn-action btn-edit" title="Sửa"
-                                            onclick="openEditModal(@sp.Id, '@sp.TenSanPham.Replace("'","\\'")', @sp.DanhMucId, '@sp.DuongDan', '@(sp.MoTaNgan?.Replace("'","\\'")??"" )', '@(sp.AnhDaiDien??"")', @(sp.LaNoiBat ? "true" : "false"), @(sp.ConHoatDong == true ? "true" : "false"))">
+                                            onclick="openEditModal(@sp.Id, '@sp.TenSanPham.Replace("'","\\'")', @sp.DanhMucId, @(sp.DoiTacId ?? 0), '@sp.DuongDan', '@(sp.MoTaNgan?.Replace("'","\\'")??"" )', '@(sp.AnhDaiDien??"")', @(sp.LaNoiBat ? "true" : "false"), @(sp.ConHoatDong == true ? "true" : "false"))">
                                         <i class="bi bi-pencil"></i>
                                     </button>
                                     <button class="btn-action btn-delete" title="Xóa"
@@ -213,17 +218,27 @@
                 @Html.AntiForgeryToken()
                 <div class="modal-body">
                     <div class="row g-3">
-                        <div class="col-md-8">
+                        <div class="col-md-6">
                             <label class="form-label fw-semibold">Tên sản phẩm <span class="text-danger">*</span></label>
                             <input type="text" name="TenSanPham" class="form-control" placeholder="VD: Windows 11 Pro" required />
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label class="form-label fw-semibold">Danh mục <span class="text-danger">*</span></label>
                             <select name="DanhMucId" class="form-select" required>
                                 <option value="">-- Chọn danh mục --</option>
                                 @foreach (var dm in danhMucList)
                                 {
                                     <option value="@dm.Id">@dm.TenDanhMuc</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Đối tác / Hãng</label>
+                            <select name="DoiTacId" class="form-select">
+                                <option value="">-- Chọn đối tác --</option>
+                                @foreach (var dt in doiTacList)
+                                {
+                                    <option value="@dt.Id">@dt.TenDoiTac</option>
                                 }
                             </select>
                         </div>
@@ -275,16 +290,26 @@
                 <input type="hidden" name="Id" id="editId" />
                 <div class="modal-body">
                     <div class="row g-3">
-                        <div class="col-md-8">
+                        <div class="col-md-6">
                             <label class="form-label fw-semibold">Tên sản phẩm <span class="text-danger">*</span></label>
                             <input type="text" name="TenSanPham" id="editTen" class="form-control" required />
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label class="form-label fw-semibold">Danh mục <span class="text-danger">*</span></label>
                             <select name="DanhMucId" id="editDanhMuc" class="form-select" required>
                                 @foreach (var dm in danhMucList)
                                 {
                                     <option value="@dm.Id">@dm.TenDanhMuc</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Đối tác / Hãng</label>
+                            <select name="DoiTacId" id="editDoiTac" class="form-select">
+                                <option value="0">-- Không chọn --</option>
+                                @foreach (var dt in doiTacList)
+                                {
+                                    <option value="@dt.Id">@dt.TenDoiTac</option>
                                 }
                             </select>
                         </div>
@@ -351,7 +376,7 @@
 @section Scripts {
 <script>
     // Mở modal sửa và điền dữ liệu
-    function openEditModal(id, ten, danhMucId, slug, moTa, anh, laNoiBat, hoatDong) {
+    function openEditModal(id, ten, danhMucId, doiTacId, slug, moTa, anh, laNoiBat, hoatDong) {
         document.getElementById('editId').value = id;
         document.getElementById('editTen').value = ten;
         document.getElementById('editSlug').value = slug;
@@ -363,6 +388,13 @@
         const dmSelect = document.getElementById('editDanhMuc');
         for (let opt of dmSelect.options) {
             opt.selected = (opt.value == danhMucId);
+        }
+
+        const dtSelect = document.getElementById('editDoiTac');
+        if (dtSelect) {
+            for (let opt of dtSelect.options) {
+                opt.selected = (opt.value == doiTacId);
+            }
         }
 
         new bootstrap.Modal(document.getElementById('modalSuaSP')).show();
