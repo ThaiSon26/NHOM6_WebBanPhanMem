@@ -1,0 +1,488 @@
+@model IEnumerable<WebBanPhanMem.Models.Danhmuc>
+
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Quản lý Danh mục";
+
+    var allCategories = Model?.ToList() ?? new List<WebBanPhanMem.Models.Danhmuc>();
+    int totalCount = allCategories.Count;
+    int rootCount = allCategories.Count(c => c.DanhMucChaId == null);
+    int subCount = allCategories.Count(c => c.DanhMucChaId != null);
+    int activeCount = allCategories.Count(c => c.ConHoatDong == true);
+    var parentOptions = ViewBag.ParentCategories as List<WebBanPhanMem.Models.Danhmuc> ?? allCategories.Where(c => c.DanhMucChaId == null).ToList();
+}
+
+<!-- Flash Message Notifications -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show border-0 rounded-4 shadow-sm mb-4 d-flex align-items-center" role="alert" style="background: #ecfdf5; color: #065f46;">
+        <i class="bi bi-check-circle-fill me-2 fs-5 text-success"></i>
+        <div><strong>Thành công:</strong> @TempData["SuccessMessage"]</div>
+        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- TOP BENTO STATS ROW FOR CATEGORIES -->
+<div class="cat-stats-row">
+    <div class="cat-stat-box">
+        <div class="cat-stat-icon blue">
+            <i class="bi bi-folder2"></i>
+        </div>
+        <div>
+            <div class="text-muted small fw-semibold">Tổng danh mục</div>
+            <div class="fs-4 fw-bold text-dark">@totalCount</div>
+        </div>
+    </div>
+
+    <div class="cat-stat-box">
+        <div class="cat-stat-icon purple">
+            <i class="bi bi-diagram-2"></i>
+        </div>
+        <div>
+            <div class="text-muted small fw-semibold">Danh mục gốc</div>
+            <div class="fs-4 fw-bold text-dark">@rootCount</div>
+        </div>
+    </div>
+
+    <div class="cat-stat-box">
+        <div class="cat-stat-icon indigo">
+            <i class="bi bi-diagram-3"></i>
+        </div>
+        <div>
+            <div class="text-muted small fw-semibold">Danh mục con</div>
+            <div class="fs-4 fw-bold text-dark">@subCount</div>
+        </div>
+    </div>
+
+    <div class="cat-stat-box">
+        <div class="cat-stat-icon green">
+            <i class="bi bi-check2-circle"></i>
+        </div>
+        <div>
+            <div class="text-muted small fw-semibold">Đang hoạt động</div>
+            <div class="fs-4 fw-bold text-success">@activeCount</div>
+        </div>
+    </div>
+</div>
+
+<!-- FILTER & ACTION TOOLBAR CARD -->
+<div class="cat-toolbar-card">
+    <div class="d-flex align-items-center gap-3 flex-wrap">
+        <!-- Realtime Search Bar (Powered by JS) -->
+        <div class="search-input-group">
+            <i class="bi bi-search text-muted"></i>
+            <input type="text" id="categorySearchInput" placeholder="Tìm tên danh mục, đường dẫn..." autocomplete="off" />
+        </div>
+
+        <!-- Filter Status Select -->
+        <select id="statusFilterSelect" class="form-select form-select-sm rounded-3 border-light-subtle" style="width: 170px;">
+            <option value="">Tất cả trạng thái</option>
+            <option value="active">Đang hoạt động</option>
+            <option value="inactive">Đang tạm khóa</option>
+        </select>
+
+        <!-- Filter Level Select -->
+        <select id="levelFilterSelect" class="form-select form-select-sm rounded-3 border-light-subtle" style="width: 160px;">
+            <option value="">Tất cả cấp bậc</option>
+            <option value="root">Danh mục gốc</option>
+            <option value="child">Danh mục con</option>
+        </select>
+    </div>
+
+    <!-- Action Add Button -->
+    <button class="btn-saas-primary" data-bs-toggle="modal" data-bs-target="#modalCreateCategory">
+        <i class="bi bi-plus-lg"></i>
+        <span>Thêm Danh Mục</span>
+    </button>
+</div>
+
+<!-- CATEGORY BENTO TABLE CARD -->
+<div class="bento-table-card">
+    <div class="d-flex align-items-center justify-content-between mb-3 px-2">
+        <div class="fw-bold fs-6 text-dark">
+            <i class="bi bi-database-check text-primary me-2"></i>Dữ liệu từ MySQL: <span class="text-primary">QLBanPhanMem</span>
+        </div>
+        <div class="text-muted small">
+            Hiển thị <span id="visibleCategoryCount" class="fw-bold text-dark">@totalCount</span> danh mục
+        </div>
+    </div>
+
+    @if (!allCategories.Any())
+    {
+        <div class="text-center py-5">
+            <div class="rounded-circle bg-light d-inline-flex p-4 mb-3 text-primary">
+                <i class="bi bi-inbox fs-1"></i>
+            </div>
+            <h5 class="fw-bold">Chưa có danh mục nào trong MySQL</h5>
+            <p class="text-muted">Nhấn nút "Thêm Danh Mục" ở trên để khởi tạo danh mục đầu tiên cho hệ thống!</p>
+            <button class="btn-saas-primary mt-2" data-bs-toggle="modal" data-bs-target="#modalCreateCategory">
+                <i class="bi bi-plus-lg"></i> Thêm ngay
+            </button>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="clean-table" id="categoryTable">
+                <thead>
+                    <tr>
+                        <th style="width: 70px;">ID</th>
+                        <th>Tên Danh Mục</th>
+                        <th>Đường dẫn (Slug)</th>
+                        <th>Cấp bậc</th>
+                        <th style="width: 100px;">Thứ tự</th>
+                        <th style="width: 140px;">Trạng thái</th>
+                        <th class="text-end" style="width: 140px;">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in allCategories)
+                    {
+                        bool isActive = item.ConHoatDong ?? true;
+                        bool isRoot = item.DanhMucChaId == null;
+
+                        <tr class="category-row" 
+                            data-name="@item.TenDanhMuc.ToLower()" 
+                            data-slug="@item.DuongDan.ToLower()"
+                            data-status="@(isActive ? "active" : "inactive")"
+                            data-level="@(isRoot ? "root" : "child")">
+                            
+                            <td>
+                                <span class="fw-bold text-muted small">#@item.Id</span>
+                            </td>
+
+                            <td>
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="rounded-3 d-flex align-items-center justify-content-center" 
+                                         style="width: 38px; height: 38px; background: #f0f4ff; color: #2563eb; font-size: 1.15rem;">
+                                        <i class="bi @(string.IsNullOrWhiteSpace(item.BieuTuong) ? "bi-folder2" : item.BieuTuong)"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold text-dark fs-6 category-name-cell">@item.TenDanhMuc</div>
+                                        @if (item.Sanphams != null && item.Sanphams.Any())
+                                        {
+                                            <span class="text-muted small">@item.Sanphams.Count() phần mềm</span>
+                                        }
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td>
+                                <span class="code-slug">@item.DuongDan</span>
+                            </td>
+
+                            <td>
+                                @if (item.DanhMucCha != null)
+                                {
+                                    <span class="badge bg-light text-dark border px-2 py-1 rounded-pill">
+                                        <i class="bi bi-arrow-return-right me-1 text-primary"></i>@item.DanhMucCha.TenDanhMuc
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 rounded-pill">
+                                        <i class="bi bi-star-fill me-1" style="font-size: 9px;"></i>Danh mục gốc
+                                    </span>
+                                }
+                            </td>
+
+                            <td>
+                                <span class="fw-semibold text-secondary">@item.ThuTu</span>
+                            </td>
+
+                            <td>
+                                <form asp-action="ToggleStatus" asp-route-id="@item.Id" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="border-0 bg-transparent p-0" title="Bấm để đổi trạng thái">
+                                        @if (isActive)
+                                        {
+                                            <span class="badge-status-paid" style="cursor: pointer;">
+                                                <i class="bi bi-check-circle-fill"></i> Hoạt động
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge-status-pending" style="cursor: pointer;">
+                                                <i class="bi bi-lock-fill"></i> Tạm khóa
+                                            </span>
+                                        }
+                                    </button>
+                                </form>
+                            </td>
+
+                            <td class="text-end">
+                                <div class="d-inline-flex gap-2">
+                                    <!-- Edit Button (triggers edit modal) -->
+                                    <button type="button" 
+                                            class="btn btn-sm btn-light border rounded-pill px-3 text-primary btn-edit-category" 
+                                            data-id="@item.Id"
+                                            data-name="@item.TenDanhMuc"
+                                            data-slug="@item.DuongDan"
+                                            data-parent="@(item.DanhMucChaId?.ToString() ?? "")"
+                                            data-icon="@item.BieuTuong"
+                                            data-order="@item.ThuTu"
+                                            data-active="@(isActive ? "true" : "false")"
+                                            title="Chỉnh sửa">
+                                        <i class="bi bi-pencil-square"></i> Sửa
+                                    </button>
+
+                                    <!-- Delete Button -->
+                                    <form asp-action="Delete" asp-route-id="@item.Id" method="post" 
+                                          onsubmit="return confirm('Bạn có chắc chắn muốn xóa danh mục \'@item.TenDanhMuc\' khỏi cơ sở dữ liệu MySQL?');" 
+                                          class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-sm btn-light border rounded-pill px-2 text-danger" title="Xóa">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+<!-- ============================================== -->
+<!-- MODAL THÊM DANH MỤC MỚI (CREATE)              -->
+<!-- ============================================== -->
+<div class="modal fade" id="modalCreateCategory" tabindex="-1" aria-labelledby="modalCreateCategoryLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg overflow-hidden">
+            <div class="modal-header border-bottom bg-light px-4 py-3">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                        <i class="bi bi-plus-lg"></i>
+                    </div>
+                    <h5 class="modal-title fw-bold text-dark" id="modalCreateCategoryLabel">Thêm Danh Mục Phần Mềm</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+
+            <form asp-action="Create" method="post" id="formCreateCategory">
+                @Html.AntiForgeryToken()
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark">Tên danh mục <span class="text-danger">*</span></label>
+                        <input type="text" name="TenDanhMuc" id="createTenDanhMuc" class="form-control rounded-3" 
+                               placeholder="Ví dụ: Hệ Điều Hành, Đồ Họa, Diệt Virus..." required />
+                        <div class="form-text">Tên hiển thị trên menu phần mềm bản quyền.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark">Đường dẫn thân thiện (Slug)</label>
+                        <input type="text" name="DuongDan" id="createDuongDan" class="form-control rounded-3" 
+                               placeholder="he-dieu-hanh (để trống sẽ tự sinh)" />
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-bold text-dark">Danh mục cha</label>
+                            <select name="DanhMucChaId" class="form-select rounded-3">
+                                <option value="">-- Danh mục gốc (Cấp 1) --</option>
+                                @foreach (var parent in parentOptions)
+                                {
+                                    <option value="@parent.Id">@parent.TenDanhMuc</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold text-dark">Thứ tự hiển thị</label>
+                            <input type="number" name="ThuTu" class="form-control rounded-3" value="1" min="1" />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark">Icon Bootstrap</label>
+                        <input type="text" name="BieuTuong" class="form-control rounded-3" 
+                               placeholder="bi-window-desktop, bi-shield-check, bi-brush..." value="bi-folder2" />
+                        <div class="form-text">Mã class icon từ thư viện Bootstrap Icons.</div>
+                    </div>
+
+                    <div class="form-check form-switch mt-3">
+                        <input class="form-check-input" type="checkbox" name="ConHoatDong" value="true" id="createConHoatDong" checked />
+                        <label class="form-check-label fw-semibold" for="createConHoatDong">Kích hoạt hiển thị trên cửa hàng</label>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-top px-4 py-3 bg-light">
+                    <button type="button" class="btn btn-light rounded-pill px-4 fw-semibold" data-bs-dismiss="modal">Hủy bỏ</button>
+                    <button type="submit" class="btn-saas-primary rounded-pill px-4">
+                        <i class="bi bi-save me-1"></i> Lưu vào MySQL
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================== -->
+<!-- MODAL CHỈNH SỬA DANH MỤC (EDIT)                -->
+<!-- ============================================== -->
+<div class="modal fade" id="modalEditCategory" tabindex="-1" aria-labelledby="modalEditCategoryLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg overflow-hidden">
+            <div class="modal-header border-bottom bg-light px-4 py-3">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                        <i class="bi bi-pencil"></i>
+                    </div>
+                    <h5 class="modal-title fw-bold text-dark" id="modalEditCategoryLabel">Cập Nhật Danh Mục</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+
+            <form asp-action="Edit" method="post" id="formEditCategory">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id" id="editCategoryId" />
+
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark">Tên danh mục <span class="text-danger">*</span></label>
+                        <input type="text" name="TenDanhMuc" id="editTenDanhMuc" class="form-control rounded-3" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark">Đường dẫn thân thiện (Slug)</label>
+                        <input type="text" name="DuongDan" id="editDuongDan" class="form-control rounded-3" required />
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-bold text-dark">Danh mục cha</label>
+                            <select name="DanhMucChaId" id="editDanhMucChaId" class="form-select rounded-3">
+                                <option value="">-- Danh mục gốc (Cấp 1) --</option>
+                                @foreach (var parent in parentOptions)
+                                {
+                                    <option value="@parent.Id">@parent.TenDanhMuc</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold text-dark">Thứ tự hiển thị</label>
+                            <input type="number" name="ThuTu" id="editThuTu" class="form-control rounded-3" min="1" />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark">Icon Bootstrap</label>
+                        <input type="text" name="BieuTuong" id="editBieuTuong" class="form-control rounded-3" />
+                    </div>
+
+                    <div class="form-check form-switch mt-3">
+                        <input class="form-check-input" type="checkbox" name="ConHoatDong" value="true" id="editConHoatDong" />
+                        <label class="form-check-label fw-semibold" for="editConHoatDong">Trạng thái hoạt động</label>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-top px-4 py-3 bg-light">
+                    <button type="button" class="btn btn-light rounded-pill px-4 fw-semibold" data-bs-dismiss="modal">Hủy bỏ</button>
+                    <button type="submit" class="btn-saas-primary rounded-pill px-4">
+                        <i class="bi bi-check-lg me-1"></i> Cập Nhật MySQL
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // 1. Tự động chuyển đổi Tên sang Slug tiếng Việt khi gõ
+            function convertToSlug(text) {
+                return text.toString().toLowerCase().trim()
+                    .replace(/[àáạảãâầấậẩẫăằắặẳẵ]/g, "a")
+                    .replace(/[èéẹẻẽêềếệểễ]/g, "e")
+                    .replace(/[ìíịỉĩ]/g, "i")
+                    .replace(/[òóọỏõôồốộổỗơờớợởỡ]/g, "o")
+                    .replace(/[ùúụủũưừứựửữ]/g, "u")
+                    .replace(/[ỳýỵỷỹ]/g, "y")
+                    .replace(/đ/g, "d")
+                    .replace(/[^a-z0-9 -]/g, "")
+                    .replace(/\s+/g, "-")
+                    .replace(/-+/g, "-");
+            }
+
+            const inputCreateName = document.getElementById("createTenDanhMuc");
+            const inputCreateSlug = document.getElementById("createDuongDan");
+            if (inputCreateName && inputCreateSlug) {
+                inputCreateName.addEventListener("input", function () {
+                    inputCreateSlug.value = convertToSlug(this.value);
+                });
+            }
+
+            // 2. Xử lý prefill dữ liệu vào Modal Edit khi bấm nút Sửa
+            const editButtons = document.querySelectorAll(".btn-edit-category");
+            const editModalEl = document.getElementById("modalEditCategory");
+            const editModal = editModalEl ? new bootstrap.Modal(editModalEl) : null;
+
+            editButtons.forEach(btn => {
+                btn.addEventListener("click", function () {
+                    const id = this.getAttribute("data-id");
+                    const name = this.getAttribute("data-name");
+                    const slug = this.getAttribute("data-slug");
+                    const parent = this.getAttribute("data-parent");
+                    const icon = this.getAttribute("data-icon");
+                    const order = this.getAttribute("data-order");
+                    const active = this.getAttribute("data-active") === "true";
+
+                    document.getElementById("editCategoryId").value = id;
+                    document.getElementById("editTenDanhMuc").value = name;
+                    document.getElementById("editDuongDan").value = slug;
+                    document.getElementById("editDanhMucChaId").value = parent;
+                    document.getElementById("editBieuTuong").value = icon;
+                    document.getElementById("editThuTu").value = order;
+                    document.getElementById("editConHoatDong").checked = active;
+
+                    if (editModal) {
+                        editModal.show();
+                    }
+                });
+            });
+
+            // 3. Xử lý tìm kiếm và bộ lọc thời gian thực (Real-time Filter)
+            const searchInput = document.getElementById("categorySearchInput");
+            const statusSelect = document.getElementById("statusFilterSelect");
+            const levelSelect = document.getElementById("levelFilterSelect");
+            const rows = document.querySelectorAll(".category-row");
+            const visibleCountEl = document.getElementById("visibleCategoryCount");
+
+            function applyFilter() {
+                const keyword = searchInput ? searchInput.value.toLowerCase().trim() : "";
+                const selectedStatus = statusSelect ? statusSelect.value : "";
+                const selectedLevel = levelSelect ? levelSelect.value : "";
+
+                let visibleCount = 0;
+
+                rows.forEach(row => {
+                    const name = row.getAttribute("data-name") || "";
+                    const slug = row.getAttribute("data-slug") || "";
+                    const status = row.getAttribute("data-status") || "";
+                    const level = row.getAttribute("data-level") || "";
+
+                    const matchSearch = !keyword || name.includes(keyword) || slug.includes(keyword);
+                    const matchStatus = !selectedStatus || status === selectedStatus;
+                    const matchLevel = !selectedLevel || level === selectedLevel;
+
+                    if (matchSearch && matchStatus && matchLevel) {
+                        row.style.display = "";
+                        visibleCount++;
+                    } else {
+                        row.style.display = "none";
+                    }
+                });
+
+                if (visibleCountEl) {
+                    visibleCountEl.textContent = visibleCount;
+                }
+            }
+
+            if (searchInput) searchInput.addEventListener("input", applyFilter);
+            if (statusSelect) statusSelect.addEventListener("change", applyFilter);
+            if (levelSelect) levelSelect.addEventListener("change", applyFilter);
+        });
+    </script>
+}

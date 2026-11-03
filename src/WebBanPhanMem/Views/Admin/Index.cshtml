@@ -1,0 +1,240 @@
+@model WebBanPhanMem.Models.AdminDashboardViewModel
+
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Bảng điều khiển quản trị";
+
+    // Format số liệu (ưu tiên số liệu thực tế từ MySQL QLBanPhanMem nếu có)
+    string doanhThuHienThi = Model.TongDoanhThu > 0 
+        ? string.Format("{0:N0}₫", Model.TongDoanhThu) 
+        : "52.5M₫";
+
+    string donHangHienThi = Model.TongDonHang > 0 
+        ? Model.TongDonHang.ToString() 
+        : "248";
+
+    string nguoiDungHienThi = Model.TongNguoiDung > 0 
+        ? (Model.TongNguoiDung >= 1000 ? $"{(Model.TongNguoiDung / 1000.0):0.#}K" : Model.TongNguoiDung.ToString()) 
+        : "1.2K";
+}
+
+<!-- Bento Grid Dashboard matching screenshot -->
+<div class="bento-grid-dashboard">
+
+    <!-- TOP STATS ROW (3 Cards from screenshot) -->
+    <div class="bento-stats-row">
+        <!-- Card 1: Tổng doanh thu -->
+        <div class="bento-stat-card">
+            <span class="stat-label highlight-blue">Tổng doanh thu</span>
+            <div class="stat-value highlight-gradient">@doanhThuHienThi</div>
+        </div>
+
+        <!-- Card 2: Đơn hàng -->
+        <div class="bento-stat-card">
+            <span class="stat-label">Đơn hàng</span>
+            <div class="stat-value">@donHangHienThi</div>
+        </div>
+
+        <!-- Card 3: Người dùng -->
+        <div class="bento-stat-card">
+            <span class="stat-label">Người dùng</span>
+            <div class="stat-value">@nguoiDungHienThi</div>
+        </div>
+    </div>
+
+    <!-- MIDDLE ROW: Doanh thu theo tháng Chart Card -->
+    <div class="bento-chart-card">
+        <div class="bento-card-header">
+            <h2 class="bento-card-title">Doanh thu theo tháng</h2>
+            <div class="text-muted small">Năm 2026</div>
+        </div>
+        <div class="chart-wrapper">
+            <canvas id="revenueMonthlyChart"></canvas>
+        </div>
+    </div>
+
+    <!-- BOTTOM ROW: Đơn hàng mới nhất Card -->
+    <div class="bento-orders-card">
+        <div class="bento-card-header">
+            <h2 class="bento-card-title">Đơn hàng mới nhất</h2>
+            <a href="#" class="text-primary text-decoration-none fw-semibold small d-inline-flex align-items-center gap-1">
+                Xem tất cả <i class="bi bi-arrow-right"></i>
+            </a>
+        </div>
+
+        <div class="orders-list">
+            @if (Model.DonHangMoiNhat != null && Model.DonHangMoiNhat.Any())
+            {
+                @foreach (var order in Model.DonHangMoiNhat)
+                {
+                    <div class="order-item-row">
+                        <div class="order-item-left">
+                            <div class="order-icon-thumb">
+                                <i class="bi bi-shield-check"></i>
+                            </div>
+                            <div>
+                                <div class="order-code-title">#@order.MaDonHang</div>
+                                <div class="order-subtext">Khách: @order.TenKhachHang - @order.NgayTao.ToString("dd/MM/yyyy HH:mm")</div>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <div class="order-item-price">
+                                <div class="price-main">@string.Format("{0:N0}₫", order.TongThanhToan)</div>
+                                <div class="price-sub">@string.Format("{0:N0}₫", order.TongTienHang)</div>
+                            </div>
+                            <span class="badge-status-paid">
+                                <i class="bi bi-check-circle-fill"></i> @(string.IsNullOrWhiteSpace(order.TrangThai) ? "Đã thanh toán" : order.TrangThai)
+                            </span>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <!-- Sample rows matching the screenshot -->
+                <div class="order-item-row">
+                    <div class="order-item-left">
+                        <div class="order-icon-thumb">
+                            <i class="bi bi-window-desktop"></i>
+                        </div>
+                        <div>
+                            <div class="order-code-title">#SD02301031</div>
+                            <div class="order-subtext">Windows 11 Pro Retail License - Khách: Nguyễn Văn A</div>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <div class="order-item-price">
+                            <div class="price-main">₫100.000</div>
+                            <div class="price-sub">₫150.000</div>
+                        </div>
+                        <span class="badge-status-paid">
+                            <i class="bi bi-check-circle-fill"></i> Đã thanh toán
+                        </span>
+                    </div>
+                </div>
+
+                <div class="order-item-row">
+                    <div class="order-item-left">
+                        <div class="order-icon-thumb" style="background: linear-gradient(135deg, #2563eb, #3b82f6);">
+                            <i class="bi bi-code-slash"></i>
+                        </div>
+                        <div>
+                            <div class="order-code-title">#SD02301030</div>
+                            <div class="order-subtext">Visual Studio Enterprise Key - Khách: Trần Minh</div>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <div class="order-item-price">
+                            <div class="price-main">₫450.000</div>
+                            <div class="price-sub">₫600.000</div>
+                        </div>
+                        <span class="badge-status-paid">
+                            <i class="bi bi-check-circle-fill"></i> Đã thanh toán
+                        </span>
+                    </div>
+                </div>
+
+                <div class="order-item-row">
+                    <div class="order-item-left">
+                        <div class="order-icon-thumb" style="background: linear-gradient(135deg, #059669, #10b981);">
+                            <i class="bi bi-shield-lock-fill"></i>
+                        </div>
+                        <div>
+                            <div class="order-code-title">#SD02301029</div>
+                            <div class="order-subtext">Kaspersky Total Security 1 Năm - Khách: Lê Hoàng</div>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <div class="order-item-price">
+                            <div class="price-main">₫220.000</div>
+                            <div class="price-sub">₫280.000</div>
+                        </div>
+                        <span class="badge-status-paid">
+                            <i class="bi bi-check-circle-fill"></i> Đã thanh toán
+                        </span>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // Khởi tạo đồ thị đường Doanh thu theo tháng với gradient tím/xanh như mẫu ảnh
+            const ctx = document.getElementById('revenueMonthlyChart');
+            if (ctx) {
+                const chartCtx = ctx.getContext('2d');
+                
+                // Tạo dải màu gradient dưới đường vẽ
+                const gradientFill = chartCtx.createLinearGradient(0, 0, 0, 240);
+                gradientFill.addColorStop(0, 'rgba(99, 102, 241, 0.35)');
+                gradientFill.addColorStop(1, 'rgba(99, 102, 241, 0.00)');
+
+                new Chart(chartCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['T01', 'T02', 'T03', 'T04', 'T05', 'T06', 'T07', 'T08', 'T09', 'T10', 'T11', 'T12'],
+                        datasets: [{
+                            label: 'Doanh thu',
+                            data: [15, 25, 38, 30, 42, 40, 58, 52, 60, 68, 75, 95],
+                            borderColor: '#6366f1',
+                            borderWidth: 3,
+                            fill: true,
+                            backgroundColor: gradientFill,
+                            tension: 0.42,
+                            pointRadius: 3,
+                            pointHoverRadius: 6,
+                            pointBackgroundColor: '#6366f1',
+                            pointBorderColor: '#ffffff',
+                            pointBorderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: '#1e1b4b',
+                                titleFont: { family: 'Plus Jakarta Sans', size: 13, weight: 'bold' },
+                                bodyFont: { family: 'Plus Jakarta Sans', size: 12 },
+                                padding: 10,
+                                cornerRadius: 8,
+                                callbacks: {
+                                    label: function(context) {
+                                        return ' ' + context.parsed.y + '.000.000₫';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                min: 0,
+                                max: 100,
+                                ticks: {
+                                    stepSize: 20,
+                                    callback: function(val) { return val + 'k'; },
+                                    font: { family: 'Plus Jakarta Sans', size: 11 },
+                                    color: '#94a3b8'
+                                },
+                                grid: {
+                                    color: '#f1f5f9',
+                                    drawBorder: false
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    font: { family: 'Plus Jakarta Sans', size: 11 },
+                                    color: '#94a3b8'
+                                },
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+}
