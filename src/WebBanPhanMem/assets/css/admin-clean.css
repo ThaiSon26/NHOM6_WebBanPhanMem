@@ -224,17 +224,40 @@ body {
     padding: 24px 10px;
 }
 
+.admin-sidebar.collapsed .sidebar-header {
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    padding: 0;
+}
+
 .admin-sidebar.collapsed .brand-pill span,
 .admin-sidebar.collapsed .nav-text,
 .admin-sidebar.collapsed .nav-chevron,
-.admin-sidebar.collapsed .nav-section-title,
-.admin-sidebar.collapsed .sidebar-toggle-btn {
+.admin-sidebar.collapsed .nav-section-title {
     display: none;
+}
+
+.admin-sidebar.collapsed .sidebar-toggle-btn {
+    display: flex;
+    background: #f1f5f9;
+    border-radius: 8px;
+    width: 32px;
+    height: 32px;
+    color: var(--primary-blue);
+}
+
+.admin-sidebar.collapsed .sidebar-toggle-btn:hover {
+    background: #e2e8f0;
+    color: var(--primary-hover);
 }
 
 .admin-sidebar.collapsed .brand-pill {
     padding: 9px;
     justify-content: center;
+    cursor: pointer;
 }
 
 .admin-sidebar.collapsed .nav-link-item {
@@ -244,6 +267,28 @@ body {
 
 .admin-sidebar.collapsed .nav-link-item-left {
     gap: 0;
+}
+
+/* Sidebar Toggle Button on Topbar */
+.sidebar-toggle-topbar-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    border: 1px solid var(--border-card);
+    background: #ffffff;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.15rem;
+    transition: var(--transition);
+}
+
+.sidebar-toggle-topbar-btn:hover {
+    background: #f1f5f9;
+    color: var(--primary-blue);
+    border-color: #cbd5e1;
 }
 
 /* MAIN VIEW AREA */
