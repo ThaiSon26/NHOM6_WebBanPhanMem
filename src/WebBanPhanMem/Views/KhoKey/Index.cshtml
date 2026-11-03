@@ -11,6 +11,7 @@
 
     var goiList = ViewBag.GoiBanQuyenList as List<WebBanPhanMem.Models.Goibanquyen> ?? new();
     var doiTacList = ViewBag.DoiTacList as List<WebBanPhanMem.Models.Doitac> ?? new();
+    var sanPhamList = ViewBag.SanPhamList as List<WebBanPhanMem.Models.Sanpham> ?? new();
 
     string searchTerm = ViewBag.SearchTerm as string ?? "";
     uint? selectedGoi = ViewBag.SelectedGoiId as uint?;
@@ -258,7 +259,19 @@
                 <div class="modal-body">
                     <div class="row g-3">
                         <div class="col-12">
-                            <label class="form-label fw-semibold">Gói bản quyền áp dụng <span class="text-danger">*</span></label>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label fw-semibold mb-0">Gói bản quyền áp dụng <span class="text-danger">*</span></label>
+                                <button type="button" class="btn btn-link p-0 text-decoration-none small fw-semibold" data-bs-toggle="modal" data-bs-target="#modalTaoNhanhGoi">
+                                    <i class="bi bi-plus-circle me-1"></i>Tạo gói mới
+                                </button>
+                            </div>
+                            @if (!goiList.Any())
+                            {
+                                <div class="alert alert-warning py-2 px-3 small rounded-3 mb-2">
+                                    <i class="bi bi-exclamation-circle me-1"></i> Chưa có gói bản quyền nào trong CSDL! 
+                                    <a href="javascript:void(0)" class="fw-bold text-dark ms-1" data-bs-toggle="modal" data-bs-target="#modalTaoNhanhGoi">Bấm vào đây để tạo nhanh gói</a>
+                                </div>
+                            }
                             <select name="GoiBanQuyenId" class="form-select" required>
                                 <option value="">-- Chọn phần mềm & gói --</option>
                                 @foreach (var g in goiList)
@@ -318,7 +331,12 @@
                 <div class="modal-body">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Gói bản quyền áp dụng <span class="text-danger">*</span></label>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label fw-semibold mb-0">Gói bản quyền áp dụng <span class="text-danger">*</span></label>
+                                <button type="button" class="btn btn-link p-0 text-decoration-none small fw-semibold" data-bs-toggle="modal" data-bs-target="#modalTaoNhanhGoi">
+                                    <i class="bi bi-plus-circle me-1"></i>Tạo gói mới
+                                </button>
+                            </div>
                             <select name="goiBanQuyenId" class="form-select" required>
                                 <option value="">-- Chọn gói bản quyền áp dụng --</option>
                                 @foreach (var g in goiList)
@@ -458,6 +476,65 @@
                     <button type="submit" class="btn btn-danger btn-sm"><i class="bi bi-trash me-1"></i>Xóa</button>
                 </form>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== Modal Tạo Nhanh Gói Bản Quyền ===== -->
+<div class="modal fade admin-modal" id="modalTaoNhanhGoi" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-box-seam me-2 text-primary"></i>Tạo nhanh Gói bản quyền</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="CreateQuickGoi" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Thuộc Sản phẩm phần mềm nào <span class="text-danger">*</span></label>
+                            @if (!sanPhamList.Any())
+                            {
+                                <div class="alert alert-warning py-2 px-3 small rounded-3 mb-2">
+                                    <i class="bi bi-info-circle me-1"></i> Chưa có sản phẩm nào! Vui lòng vào menu <a href="/Admin/SanPham" class="fw-bold">Sản phẩm</a> tạo trước.
+                                </div>
+                            }
+                            <select name="sanPhamId" class="form-select" required>
+                                <option value="">-- Chọn phần mềm --</option>
+                                @foreach (var sp in sanPhamList)
+                                {
+                                    <option value="@sp.Id">@sp.TenSanPham</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-8">
+                            <label class="form-label fw-semibold">Tên gói bản quyền <span class="text-danger">*</span></label>
+                            <input type="text" name="tenGoi" class="form-control" placeholder="VD: 1 Năm / 1 PC, Vĩnh viễn..." required />
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label fw-semibold">Mã hàng (SKU)</label>
+                            <input type="text" name="maHang" class="form-control font-mono" placeholder="VD: WIN11-PRO" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold">Giá bán (₫) <span class="text-danger">*</span></label>
+                            <input type="number" name="gia" class="form-control" placeholder="350000" min="0" value="199000" required />
+                        </div>
+                        <div class="col-3">
+                            <label class="form-label fw-semibold">Số máy</label>
+                            <input type="number" name="soMay" class="form-control" value="1" min="1" required />
+                        </div>
+                        <div class="col-3">
+                            <label class="form-label fw-semibold">Bảo hành (ngày)</label>
+                            <input type="number" name="baoHanh" class="form-control" value="365" min="0" required />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle me-1"></i>Lưu gói</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

@@ -55,9 +55,14 @@ namespace WebBanPhanMem.Controllers
 
             ViewBag.GoiBanQuyenList = await _context.Goibanquyens
                 .Include(g => g.SanPham)
-                .Where(g => g.ConHoatDong == true)
+                .Where(g => g.ConHoatDong == null || g.ConHoatDong == true)
                 .OrderBy(g => g.SanPham.TenSanPham)
                 .ThenBy(g => g.TenGoiBanQuyen)
+                .ToListAsync();
+
+            ViewBag.SanPhamList = await _context.Sanphams
+                .Where(s => s.ConHoatDong == null || s.ConHoatDong == true)
+                .OrderBy(s => s.TenSanPham)
                 .ToListAsync();
 
             ViewBag.DoiTacList = await _context.Doitacs
@@ -71,6 +76,36 @@ namespace WebBanPhanMem.Controllers
             ViewBag.SelectedTrangThai = trangThai;
 
             return View(list);
+        }
+
+        // POST: Tạo nhanh Gói bản quyền ngay tại trang Kho Key
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateQuickGoi(uint sanPhamId, string tenGoi, string maHang, decimal gia, int soMay, int baoHanh)
+        {
+            if (sanPhamId == 0 || string.IsNullOrWhiteSpace(tenGoi))
+            {
+                TempData["ErrorMessage"] = "Vui lòng chọn sản phẩm và nhập tên gói bản quyền!";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var goi = new Goibanquyen
+            {
+                SanPhamId = sanPhamId,
+                TenGoiBanQuyen = tenGoi.Trim(),
+                MaHang = string.IsNullOrWhiteSpace(maHang) ? ("SKU-" + DateTime.Now.Ticks.ToString().Substring(12)) : maHang.Trim(),
+                Gia = gia,
+                SoMayToiDa = soMay > 0 ? soMay : 1,
+                BaoHanhNgay = baoHanh > 0 ? baoHanh : 30,
+                SoKeyConLai = 0,
+                ConHoatDong = true
+            };
+
+            _context.Goibanquyens.Add(goi);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = $"Đã tạo gói \"{goi.TenGoiBanQuyen}\" thành công! Bạn có thể nhập Key cho gói này ngay bây giờ.";
+            return RedirectToAction(nameof(Index));
         }
 
         // POST: Thêm 1 key lẻ
