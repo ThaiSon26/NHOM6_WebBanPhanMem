@@ -1,0 +1,254 @@
+@model WebBanPhanMem.Models.LoginViewModel
+@{
+    Layout = null; // Standalone auth page matching the clean SaaS card in screenshot
+    ViewData["Title"] = "Đăng nhập / Đăng ký - SoftDev";
+    string activeTab = (ViewBag.ActiveTab as string) ?? "login";
+    var registerModel = ViewData["RegisterModel"] as WebBanPhanMem.Models.RegisterViewModel ?? new WebBanPhanMem.Models.RegisterViewModel();
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap 5 & Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+
+    <!-- Custom Style CSS -->
+    <link rel="stylesheet" href="~/css/style.css" asp-append-version="true" />
+</head>
+<body class="auth-page-body">
+    <div class="auth-container">
+        
+        <!-- Header Badge (Như thiết kế số 8 trong ảnh mẫu) -->
+        <div class="auth-top-badge">
+            <span class="auth-badge-pill">8.</span>
+            <span class="auth-badge-text">Đăng nhập / Đăng ký</span>
+        </div>
+
+        <!-- Notification Alerts -->
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="auth-alert-success">
+                <i class="bi bi-check-circle-fill fs-5"></i>
+                <div>@TempData["SuccessMessage"]</div>
+            </div>
+        }
+
+        <!-- AUTH CARD -->
+        <div class="auth-card">
+            <!-- Segmented Control Tabs (Đăng nhập / Đăng ký) -->
+            <div class="auth-tabs-wrapper">
+                <button type="button" class="auth-tab-btn @(activeTab == "login" ? "active" : "")" id="tabLoginBtn">
+                    Đăng nhập
+                </button>
+                <button type="button" class="auth-tab-btn @(activeTab == "register" ? "active" : "")" id="tabRegisterBtn">
+                    Đăng ký
+                </button>
+            </div>
+
+            <!-- Heading -->
+            <h2 class="auth-title" id="authMainTitle">
+                @(activeTab == "register" ? "Tạo tài khoản mới" : "Đăng nhập tài khoản")
+            </h2>
+
+            <!-- ============================================== -->
+            <!-- FORM ĐĂNG NHẬP (LOGIN FORM)                    -->
+            <!-- ============================================== -->
+            <form asp-controller="Account" asp-action="Login" method="post" id="formLogin" style="display: @(activeTab == "login" ? "block" : "none");">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+
+                <!-- Validation Summary -->
+                @if (!ViewData.ModelState.IsValid && activeTab == "login")
+                {
+                    <div class="auth-alert-danger">
+                        <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+                        <div>
+                            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                            {
+                                <div>@error.ErrorMessage</div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <!-- Email hoặc Tên đăng nhập -->
+                <div class="auth-field-group">
+                    <label class="auth-label" for="loginEmail">Email hoặc tên đăng nhập</label>
+                    <div class="auth-input-wrapper">
+                        <i class="bi bi-search auth-icon-left"></i>
+                        <input type="text" name="EmailOrUsername" id="loginEmail" class="auth-input-control" 
+                               value="@Model.EmailOrUsername" placeholder="example@gmail.com" required autocomplete="username" />
+                    </div>
+                </div>
+
+                <!-- Mật khẩu -->
+                <div class="auth-field-group">
+                    <label class="auth-label" for="loginPassword">Mật khẩu</label>
+                    <div class="auth-input-wrapper">
+                        <i class="bi bi-lock auth-icon-left"></i>
+                        <input type="password" name="Password" id="loginPassword" class="auth-input-control" 
+                               placeholder="••••••••" required autocomplete="current-password" />
+                        <button type="button" class="auth-btn-eye" data-target="loginPassword" title="Ẩn/Hiện mật khẩu">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Ghi nhớ & Quên mật khẩu -->
+                <div class="auth-options-row">
+                    <label class="auth-checkbox-label">
+                        <input type="checkbox" name="RememberMe" value="true" class="form-check-input" @(Model.RememberMe ? "checked" : "") />
+                        <span>Ghi nhớ đăng nhập</span>
+                    </label>
+                    <a href="#" class="auth-forgot-link" onclick="alert('Vui lòng liên hệ quản trị viên qua email admin@softdev.vn để đặt lại mật khẩu.'); return false;">
+                        Quên mật khẩu?
+                    </a>
+                </div>
+
+                <!-- Nút Đăng nhập Gradient -->
+                <button type="submit" class="btn-auth-primary">
+                    <span>Đăng nhập</span>
+                </button>
+            </form>
+
+            <!-- ============================================== -->
+            <!-- FORM ĐĂNG KÝ (REGISTER FORM)                   -->
+            <!-- ============================================== -->
+            <form asp-controller="Account" asp-action="Register" method="post" id="formRegister" style="display: @(activeTab == "register" ? "block" : "none");">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+
+                <!-- Validation Summary -->
+                @if (!ViewData.ModelState.IsValid && activeTab == "register")
+                {
+                    <div class="auth-alert-danger">
+                        <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+                        <div>
+                            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                            {
+                                <div>@error.ErrorMessage</div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <!-- Họ và tên -->
+                <div class="auth-field-group">
+                    <label class="auth-label" for="regHoTen">Họ và tên <span class="text-danger">*</span></label>
+                    <div class="auth-input-wrapper">
+                        <i class="bi bi-person auth-icon-left"></i>
+                        <input type="text" name="HoTen" id="regHoTen" class="auth-input-control" 
+                               value="@registerModel.HoTen" placeholder="Nguyễn Văn A" required />
+                    </div>
+                </div>
+
+                <!-- Email -->
+                <div class="auth-field-group">
+                    <label class="auth-label" for="regEmail">Địa chỉ Email <span class="text-danger">*</span></label>
+                    <div class="auth-input-wrapper">
+                        <i class="bi bi-envelope auth-icon-left"></i>
+                        <input type="email" name="Email" id="regEmail" class="auth-input-control" 
+                               value="@registerModel.Email" placeholder="name@example.com" required />
+                    </div>
+                </div>
+
+                <!-- Số điện thoại -->
+                <div class="auth-field-group">
+                    <label class="auth-label" for="regPhone">Số điện thoại</label>
+                    <div class="auth-input-wrapper">
+                        <i class="bi bi-telephone auth-icon-left"></i>
+                        <input type="tel" name="SoDienThoai" id="regPhone" class="auth-input-control" 
+                               value="@registerModel.SoDienThoai" placeholder="0912345678" />
+                    </div>
+                </div>
+
+                <!-- Mật khẩu -->
+                <div class="auth-field-group">
+                    <label class="auth-label" for="regPassword">Mật khẩu <span class="text-danger">*</span></label>
+                    <div class="auth-input-wrapper">
+                        <i class="bi bi-shield-lock auth-icon-left"></i>
+                        <input type="password" name="Password" id="regPassword" class="auth-input-control" 
+                               placeholder="Ít nhất 6 ký tự" required autocomplete="new-password" />
+                        <button type="button" class="auth-btn-eye" data-target="regPassword" title="Ẩn/Hiện mật khẩu">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Nhập lại mật khẩu -->
+                <div class="auth-field-group">
+                    <label class="auth-label" for="regConfirmPassword">Nhập lại mật khẩu <span class="text-danger">*</span></label>
+                    <div class="auth-input-wrapper">
+                        <i class="bi bi-shield-check auth-icon-left"></i>
+                        <input type="password" name="ConfirmPassword" id="regConfirmPassword" class="auth-input-control" 
+                               placeholder="Nhập lại chính xác mật khẩu" required autocomplete="new-password" />
+                        <button type="button" class="auth-btn-eye" data-target="regConfirmPassword" title="Ẩn/Hiện mật khẩu">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Điều khoản -->
+                <div class="auth-options-row">
+                    <label class="auth-checkbox-label">
+                        <input type="checkbox" name="AgreeTerms" value="true" class="form-check-input" checked required />
+                        <span class="small">Tôi đồng ý với <a href="#" class="auth-forgot-link">Điều khoản dịch vụ</a></span>
+                    </label>
+                </div>
+
+                <!-- Nút Đăng ký Gradient -->
+                <button type="submit" class="btn-auth-primary">
+                    <i class="bi bi-person-check me-1"></i>
+                    <span>Đăng ký tài khoản</span>
+                </button>
+            </form>
+
+            <!-- Divider "Hoặc đăng nhập với" -->
+            <div class="auth-divider">
+                <span>Hoặc đăng nhập với</span>
+            </div>
+
+            <!-- Social Buttons (Google & GitHub) -->
+            <div class="auth-social-row">
+                <!-- Google Button -->
+                <button type="button" class="btn-social-saas" onclick="alert('Đăng nhập Google sẽ được tích hợp với OAuth 2.0.');">
+                    <svg width="18" height="18" viewBox="0 0 18 18">
+                        <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.616z"/>
+                        <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/>
+                        <path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.55 0 9s.347 2.825.957 4.039l3.007-2.332z"/>
+                        <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.346l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z"/>
+                    </svg>
+                    <span>Google</span>
+                </button>
+
+                <!-- GitHub Button -->
+                <button type="button" class="btn-social-saas" onclick="alert('Đăng nhập GitHub sẽ được tích hợp với OAuth 2.0.');">
+                    <i class="bi bi-github fs-5"></i>
+                    <span>GitHub</span>
+                </button>
+            </div>
+
+            <!-- Footer Return Home -->
+            <div class="text-center mt-4">
+                <a href="/" class="text-muted text-decoration-none small d-inline-flex align-items-center gap-1">
+                    <i class="bi bi-arrow-left"></i> Quay lại trang chủ Cửa hàng
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script JS -->
+    <script src="~/js/script.js" asp-append-version="true"></script>
+</body>
+</html>
+
