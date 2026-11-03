@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebBanPhanMem.Data;
@@ -5,6 +6,7 @@ using WebBanPhanMem.Models;
 
 namespace WebBanPhanMem.Controllers
 {
+    [Authorize(Roles = "Quản trị")]
     public class DanhMucController : Controller
     {
         private readonly ApplicationDbContext _context;
