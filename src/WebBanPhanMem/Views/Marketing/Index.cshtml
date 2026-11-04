@@ -1,0 +1,643 @@
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Quản lý Marketing & Tương tác";
+
+    string activeTab = ViewBag.ActiveTab as string ?? "voucher";
+    var vouchers = ViewBag.Vouchers as List<WebBanPhanMem.Models.Magiamgium> ?? new();
+    var reviews = ViewBag.Reviews as List<WebBanPhanMem.Models.Danhgium> ?? new();
+    var sanPhamList = ViewBag.SanPhamList as List<WebBanPhanMem.Models.Sanpham> ?? new();
+
+    string searchTerm = ViewBag.SearchTerm as string ?? "";
+    bool? selectedStatus = ViewBag.SelectedStatus as bool?;
+    bool? selectedDaDuyet = ViewBag.SelectedDaDuyet as bool?;
+    uint? selectedSanPhamId = ViewBag.SelectedSanPhamId as uint?;
+
+    // Thống kê Voucher
+    int totalVoucher = vouchers.Count;
+    int activeVoucher = vouchers.Count(v => v.ConHoatDong == true && (v.ThoiDiemKetThuc == null || v.ThoiDiemKetThuc >= DateTime.Now));
+    int totalUsed = vouchers.Sum(v => v.SoLanDaDung);
+
+    // Thống kê Review
+    int totalReview = reviews.Count;
+    int approvedReview = reviews.Count(r => r.DaDuyet);
+    int pendingReview = totalReview - approvedReview;
+    double avgRating = totalReview > 0 ? Math.Round(reviews.Average(r => (double)r.DiemDanhGia), 1) : 5.0;
+}
+
+<div class="admin-page-wrapper">
+    <!-- Page Header & Tab Navigation -->
+    <div class="page-header-bar">
+        <div>
+            <h1 class="page-title"><i class="bi bi-megaphone-fill me-2 text-primary"></i>Marketing & Tương tác</h1>
+            <p class="page-subtitle">Chiến dịch khuyến mãi, mã giảm giá voucher và kiểm duyệt đánh giá khách hàng</p>
+        </div>
+        <div>
+            @if (activeTab == "voucher")
+            {
+                <button class="btn btn-primary btn-add" data-bs-toggle="modal" data-bs-target="#modalThemVoucher">
+                    <i class="bi bi-plus-circle me-1"></i> Tạo mã giảm giá mới
+                </button>
+            }
+        </div>
+    </div>
+
+    <!-- Alert Notifications -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show bento-alert" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show bento-alert" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Clean SaaS Tab Switcher -->
+    <div class="bento-card p-2 mb-4">
+        <ul class="nav nav-pills nav-fill gap-2">
+            <li class="nav-item">
+                <a class="nav-link py-2 fw-bold @(activeTab == "voucher" ? "active bg-primary" : "text-muted")" href="?tab=voucher">
+                    <i class="bi bi-tag-fill me-2"></i>Mã giảm giá & Voucher (@totalVoucher)
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link py-2 fw-bold @(activeTab == "review" ? "active bg-primary" : "text-muted")" href="?tab=review">
+                    <i class="bi bi-chat-heart-fill me-2"></i>Kiểm duyệt Đánh giá (@totalReview)
+                    @if (pendingReview > 0)
+                    {
+                        <span class="badge bg-danger ms-1">@pendingReview chờ duyệt</span>
+                    }
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    @if (activeTab == "voucher")
+    {
+        <!-- ==================== TAB 1: MÃ GIẢM GIÁ ==================== -->
+        <!-- Bento Stats Voucher -->
+        <div class="bento-stats-row">
+            <div class="bento-stat-card">
+                <div class="stat-icon bg-primary-soft">
+                    <i class="bi bi-tag text-primary"></i>
+                </div>
+                <div>
+                    <div class="stat-value">@totalVoucher</div>
+                    <div class="stat-label">Tổng số mã giảm giá</div>
+                </div>
+            </div>
+
+            <div class="bento-stat-card">
+                <div class="stat-icon bg-success-soft">
+                    <i class="bi bi-check-circle text-success"></i>
+                </div>
+                <div>
+                    <div class="stat-value text-success">@activeVoucher</div>
+                    <div class="stat-label">Đang có hiệu lực</div>
+                </div>
+            </div>
+
+            <div class="bento-stat-card">
+                <div class="stat-icon bg-info-soft">
+                    <i class="bi bi-cart-check text-info"></i>
+                </div>
+                <div>
+                    <div class="stat-value text-info">@totalUsed</div>
+                    <div class="stat-label">Lượt đã áp dụng</div>
+                </div>
+            </div>
+
+            <div class="bento-stat-card">
+                <div class="stat-icon bg-warning-soft">
+                    <i class="bi bi-clock-history text-warning"></i>
+                </div>
+                <div>
+                    <div class="stat-value">@(totalVoucher - activeVoucher)</div>
+                    <div class="stat-label">Hết hạn / Tạm dừng</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter Voucher -->
+        <div class="bento-card filter-bar">
+            <form method="get" action="@Url.Action("Index")" class="filter-form">
+                <input type="hidden" name="tab" value="voucher" />
+                <div class="filter-group">
+                    <div class="search-input-wrap">
+                        <i class="bi bi-search search-icon-inner"></i>
+                        <input type="text" name="search" class="form-control search-input"
+                               placeholder="Tìm theo mã code, mô tả..."
+                               value="@searchTerm" />
+                    </div>
+                    <select name="conHoatDong" class="form-select filter-select" style="min-width: 170px;">
+                        <option value="">-- Mọi trạng thái --</option>
+                        <option value="true" selected="@(selectedStatus == true)">Đang kích hoạt</option>
+                        <option value="false" selected="@(selectedStatus == false)">Tạm dừng</option>
+                    </select>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-funnel me-1"></i>Lọc</button>
+                    <a href="?tab=voucher" class="btn btn-outline-secondary"><i class="bi bi-x-circle me-1"></i>Xóa lọc</a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Voucher Table -->
+        <div class="bento-card table-card">
+            <div class="table-responsive">
+                <table class="table admin-table" id="voucherTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 50px;">#</th>
+                            <th>Mã Voucher</th>
+                            <th>Mức giảm</th>
+                            <th>Đơn tối thiểu</th>
+                            <th>Giảm tối đa</th>
+                            <th>Đã dùng / Giới hạn</th>
+                            <th>Thời hạn</th>
+                            <th>Trạng thái</th>
+                            <th class="text-center" style="width: 120px;">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!vouchers.Any())
+                        {
+                            <tr>
+                                <td colspan="9" class="text-center py-5 text-muted">
+                                    <i class="bi bi-tag fs-2 d-block mb-2"></i>
+                                    Chưa có mã giảm giá nào. Hãy bấm <strong>Tạo mã giảm giá mới</strong> để bắt đầu chiến dịch!
+                                </td>
+                            </tr>
+                        }
+                        @{ int vIdx = 1; }
+                        @foreach (var v in vouchers)
+                        {
+                            bool isExpired = v.ThoiDiemKetThuc.HasValue && v.ThoiDiemKetThuc.Value < DateTime.Now;
+                            <tr>
+                                <td class="text-muted">@vIdx</td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-mono fs-6 px-2 py-1">
+                                            @v.MaGiamGia
+                                        </span>
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(v.MoTa))
+                                    {
+                                        <small class="text-muted d-block text-truncate" style="max-width: 200px;" title="@v.MoTa">@v.MoTa</small>
+                                    }
+                                </td>
+                                <td>
+                                    @if (v.KieuGiam == "Phần trăm")
+                                    {
+                                        <span class="fw-bold text-success fs-6">-@v.GiaTriGiam.ToString("G29")%</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="fw-bold text-success fs-6 font-mono">-@v.GiaTriGiam.ToString("N0")₫</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="font-mono text-dark">@(v.DonToiThieu > 0 ? v.DonToiThieu.ToString("N0") + "₫" : "0₫")</span>
+                                </td>
+                                <td>
+                                    <span class="font-mono text-muted">@(v.GiamToiDa.HasValue ? v.GiamToiDa.Value.ToString("N0") + "₫" : "Không giới hạn")</span>
+                                </td>
+                                <td>
+                                    <span class="fw-bold text-dark font-mono">@v.SoLanDaDung</span>
+                                    <span class="text-muted font-mono">/ @(v.SoLanToiDa.HasValue ? v.SoLanToiDa.Value.ToString() : "∞")</span>
+                                </td>
+                                <td>
+                                    @if (v.ThoiDiemKetThuc.HasValue)
+                                    {
+                                        <small class="font-mono @(isExpired ? "text-danger fw-bold" : "text-muted")">
+                                            @v.ThoiDiemKetThuc.Value.ToString("dd/MM/yyyy HH:mm")
+                                        </small>
+                                        @if (isExpired)
+                                        {
+                                            <span class="badge bg-danger ms-1">Hết hạn</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <small class="text-muted">Vô thời hạn</small>
+                                    }
+                                </td>
+                                <td>
+                                    <form asp-action="ToggleVoucherStatus" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@v.Id" />
+                                        <button type="submit" class="btn-status @(v.ConHoatDong == true && !isExpired ? "status-active" : "status-inactive")" title="Nhấn để đổi trạng thái">
+                                            @(v.ConHoatDong == true && !isExpired ? "Kích hoạt" : "Tạm dừng")
+                                        </button>
+                                    </form>
+                                </td>
+                                <td>
+                                    <div class="action-buttons justify-content-center">
+                                        <button class="btn-action btn-edit" title="Sửa mã giảm giá"
+                                                onclick="openEditVoucherModal(@v.Id, '@v.MaGiamGia', '@(v.MoTa?.Replace("'", "\\'") ?? "")', '@v.KieuGiam', @v.GiaTriGiam, @v.DonToiThieu, @(v.GiamToiDa?.ToString() ?? "0"), @(v.SoLanToiDa?.ToString() ?? "0"), '@(v.ThoiDiemBatDau?.ToString("yyyy-MM-ddTHH:mm") ?? "")', '@(v.ThoiDiemKetThuc?.ToString("yyyy-MM-ddTHH:mm") ?? "")', @(v.ConHoatDong == true ? "true" : "false"))">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn-action btn-delete" title="Xóa mã"
+                                                onclick="confirmDeleteVoucher(@v.Id, '@v.MaGiamGia')">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            vIdx++;
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- ==================== TAB 2: KIỂM DUYỆT ĐÁNH GIÁ ==================== -->
+        <!-- Bento Stats Review -->
+        <div class="bento-stats-row">
+            <div class="bento-stat-card">
+                <div class="stat-icon bg-primary-soft">
+                    <i class="bi bi-chat-square-text text-primary"></i>
+                </div>
+                <div>
+                    <div class="stat-value">@totalReview</div>
+                    <div class="stat-label">Tổng lượt đánh giá</div>
+                </div>
+            </div>
+
+            <div class="bento-stat-card">
+                <div class="stat-icon bg-success-soft">
+                    <i class="bi bi-check-circle text-success"></i>
+                </div>
+                <div>
+                    <div class="stat-value text-success">@approvedReview</div>
+                    <div class="stat-label">Đã duyệt hiển thị</div>
+                </div>
+            </div>
+
+            <div class="bento-stat-card">
+                <div class="stat-icon bg-warning-soft">
+                    <i class="bi bi-hourglass-split text-warning"></i>
+                </div>
+                <div>
+                    <div class="stat-value text-warning">@pendingReview</div>
+                    <div class="stat-label">Đang chờ duyệt</div>
+                </div>
+            </div>
+
+            <div class="bento-stat-card">
+                <div class="stat-icon bg-info-soft">
+                    <i class="bi bi-star-fill text-warning"></i>
+                </div>
+                <div>
+                    <div class="stat-value text-dark">@avgRating ★</div>
+                    <div class="stat-label">Điểm trung bình</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter Review -->
+        <div class="bento-card filter-bar">
+            <form method="get" action="@Url.Action("Index")" class="filter-form">
+                <input type="hidden" name="tab" value="review" />
+                <div class="filter-group">
+                    <div class="search-input-wrap">
+                        <i class="bi bi-search search-icon-inner"></i>
+                        <input type="text" name="search" class="form-control search-input"
+                               placeholder="Tìm theo tên khách, nội dung nhận xét..."
+                               value="@searchTerm" />
+                    </div>
+                    <select name="sanPhamId" class="form-select filter-select" style="min-width: 170px;">
+                        <option value="">-- Tất cả phần mềm --</option>
+                        @foreach (var sp in sanPhamList)
+                        {
+                            <option value="@sp.Id" selected="@(selectedSanPhamId == sp.Id)">@sp.TenSanPham</option>
+                        }
+                    </select>
+                    <select name="daDuyet" class="form-select filter-select" style="min-width: 170px;">
+                        <option value="">-- Trạng thái duyệt --</option>
+                        <option value="true" selected="@(selectedDaDuyet == true)">Đã duyệt hiển thị</option>
+                        <option value="false" selected="@(selectedDaDuyet == false)">Chờ duyệt / Ẩn</option>
+                    </select>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-funnel me-1"></i>Lọc</button>
+                    <a href="?tab=review" class="btn btn-outline-secondary"><i class="bi bi-x-circle me-1"></i>Xóa lọc</a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Review Table -->
+        <div class="bento-card table-card">
+            <div class="table-responsive">
+                <table class="table admin-table" id="reviewTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 50px;">#</th>
+                            <th>Khách hàng</th>
+                            <th>Sản phẩm phần mềm</th>
+                            <th class="text-center">Số sao</th>
+                            <th>Nội dung nhận xét</th>
+                            <th>Trạng thái</th>
+                            <th>Thời gian</th>
+                            <th class="text-center" style="width: 130px;">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!reviews.Any())
+                        {
+                            <tr>
+                                <td colspan="8" class="text-center py-5 text-muted">
+                                    <i class="bi bi-chat-square-dots fs-2 d-block mb-2"></i>
+                                    Chưa có đánh giá nào từ khách hàng.
+                                </td>
+                            </tr>
+                        }
+                        @{ int rIdx = 1; }
+                        @foreach (var r in reviews)
+                        {
+                            <tr>
+                                <td class="text-muted">@rIdx</td>
+                                <td>
+                                    <div class="fw-bold text-dark">@r.TenNguoiDanhGia</div>
+                                    @if (r.TaiKhoan != null)
+                                    {
+                                        <small class="text-muted"><i class="bi bi-shield-check text-success me-1"></i>Đã mua hàng</small>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-dark">@(r.SanPham?.TenSanPham ?? "—")</div>
+                                </td>
+                                <td class="text-center">
+                                    <div class="text-warning text-nowrap">
+                                        @for (int s = 1; s <= 5; s++)
+                                        {
+                                            if (s <= r.DiemDanhGia)
+                                            {
+                                                <i class="bi bi-star-fill"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-star text-muted opacity-25"></i>
+                                            }
+                                        }
+                                    </div>
+                                    <small class="font-mono text-muted">(@r.DiemDanhGia/5)</small>
+                                </td>
+                                <td>
+                                    <p class="mb-0 text-dark small" style="max-width: 320px;">
+                                        @(string.IsNullOrEmpty(r.NoiDung) ? "Không có lời nhận xét." : r.NoiDung)
+                                    </p>
+                                </td>
+                                <td>
+                                    <form asp-action="ToggleReviewStatus" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@r.Id" />
+                                        <button type="submit" class="btn-status @(r.DaDuyet ? "status-active" : "status-inactive")" title="Nhấn để Duyệt/Ẩn">
+                                            @(r.DaDuyet ? "Đã duyệt" : "Chờ duyệt")
+                                        </button>
+                                    </form>
+                                </td>
+                                <td>
+                                    <small class="text-muted font-mono">@r.NgayTao.ToString("dd/MM/yyyy HH:mm")</small>
+                                </td>
+                                <td>
+                                    <div class="action-buttons justify-content-center">
+                                        <form asp-action="ToggleReviewStatus" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@r.Id" />
+                                            <button type="submit" class="btn-action @(r.DaDuyet ? "btn-warning" : "btn-success") text-white" title="@(r.DaDuyet ? "Ẩn đánh giá" : "Duyệt hiển thị")">
+                                                <i class="bi @(r.DaDuyet ? "bi-eye-slash" : "bi-check2")"></i>
+                                            </button>
+                                        </form>
+                                        <form asp-action="DeleteReview" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc muốn xóa đánh giá này?');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@r.Id" />
+                                            <button type="submit" class="btn-action btn-delete" title="Xóa đánh giá spam">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            rIdx++;
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- ===== Modal Thêm Mã Giảm Giá ===== -->
+<div class="modal fade admin-modal" id="modalThemVoucher" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-tag-fill me-2 text-primary"></i>Tạo mã giảm giá mới</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="CreateVoucher" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-7">
+                            <label class="form-label fw-semibold">Mã code giảm giá <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input type="text" name="maGiamGia" id="inputNewCode" class="form-control font-mono text-uppercase fw-bold" placeholder="VD: SALE20, CHAOHE50" required />
+                                <button type="button" class="btn btn-outline-secondary" onclick="generateRandomCode()">
+                                    <i class="bi bi-magic me-1"></i>Tự tạo
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label fw-semibold">Kiểu giảm giá <span class="text-danger">*</span></label>
+                            <select name="kieuGiam" class="form-select fw-semibold" id="selectKieuGiam" onchange="updateLabelGiaTri(this.value)">
+                                <option value="Phần trăm">Phần trăm (%)</option>
+                                <option value="Số tiền">Số tiền cố định (₫)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold" id="lblGiaTriGiam">Giá trị giảm (%) <span class="text-danger">*</span></label>
+                            <input type="number" name="giaTriGiam" class="form-control font-mono" placeholder="VD: 15" min="1" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Đơn hàng tối thiểu (₫)</label>
+                            <input type="number" name="donToiThieu" class="form-control font-mono" value="0" min="0" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Giảm tối đa (₫)</label>
+                            <input type="number" name="giamToiDa" class="form-control font-mono" placeholder="Bỏ trống = Không giới hạn" min="0" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Giới hạn số lần dùng</label>
+                            <input type="number" name="soLanToiDa" class="form-control font-mono" placeholder="Bỏ trống = Vô hạn" min="1" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Thời điểm bắt đầu</label>
+                            <input type="datetime-local" name="thoiDiemBatDau" class="form-control font-mono" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Thời điểm kết thúc</label>
+                            <input type="datetime-local" name="thoiDiemKetThuc" class="form-control font-mono" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Mô tả chương trình</label>
+                            <input type="text" name="moTa" class="form-control" placeholder="VD: Giảm 20% tối đa 100k cho đơn từ 200k..." />
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input" type="checkbox" name="conHoatDong" value="true" id="chkNewVoucherActive" checked>
+                                <label class="form-check-label" for="chkNewVoucherActive">Kích hoạt mã ngay sau khi lưu</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle me-1"></i>Lưu mã voucher</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ===== Modal Sửa Mã Giảm Giá ===== -->
+<div class="modal fade admin-modal" id="modalSuaVoucher" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-pencil-square me-2 text-primary"></i>Chỉnh sửa mã giảm giá</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="EditVoucher" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="editVoucherId" />
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-7">
+                            <label class="form-label fw-semibold">Mã code</label>
+                            <input type="text" id="editVoucherCode" class="form-control font-mono fw-bold bg-light" readonly />
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label fw-semibold">Kiểu giảm giá <span class="text-danger">*</span></label>
+                            <select name="kieuGiam" id="editVoucherKieuGiam" class="form-select fw-semibold">
+                                <option value="Phần trăm">Phần trăm (%)</option>
+                                <option value="Số tiền">Số tiền cố định (₫)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Giá trị giảm <span class="text-danger">*</span></label>
+                            <input type="number" name="giaTriGiam" id="editVoucherGiaTri" class="form-control font-mono" min="1" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Đơn tối thiểu (₫)</label>
+                            <input type="number" name="donToiThieu" id="editVoucherDonToiThieu" class="form-control font-mono" min="0" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Giảm tối đa (₫)</label>
+                            <input type="number" name="giamToiDa" id="editVoucherGiamToiDa" class="form-control font-mono" min="0" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Giới hạn số lần dùng</label>
+                            <input type="number" name="soLanToiDa" id="editVoucherSoLanToiDa" class="form-control font-mono" min="1" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Thời điểm bắt đầu</label>
+                            <input type="datetime-local" name="thoiDiemBatDau" id="editVoucherBatDau" class="form-control font-mono" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Thời điểm kết thúc</label>
+                            <input type="datetime-local" name="thoiDiemKetThuc" id="editVoucherKetThuc" class="form-control font-mono" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Mô tả</label>
+                            <input type="text" name="moTa" id="editVoucherMoTa" class="form-control" />
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input" type="checkbox" name="conHoatDong" value="true" id="editVoucherHoatDong">
+                                <label class="form-check-label" for="editVoucherHoatDong">Đang kích hoạt</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i>Lưu thay đổi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ===== Modal Xóa Voucher ===== -->
+<div class="modal fade admin-modal" id="modalXoaVoucher" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Xác nhận xóa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <p>Bạn có chắc muốn xóa mã giảm giá này?</p>
+                <p class="fw-bold font-mono text-dark fs-5" id="xoaVoucherCodeText"></p>
+                <small class="text-danger">Lưu ý: Chỉ xóa được mã chưa từng áp dụng cho đơn hàng nào!</small>
+            </div>
+            <div class="modal-footer border-0">
+                <form asp-action="DeleteVoucher" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" id="xoaVoucherId" />
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-danger btn-sm"><i class="bi bi-trash me-1"></i>Xóa</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function generateRandomCode() {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        let code = 'SALE';
+        for (let i = 0; i < 4; i++) {
+            code += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        document.getElementById('inputNewCode').value = code;
+    }
+
+    function updateLabelGiaTri(kieu) {
+        const lbl = document.getElementById('lblGiaTriGiam');
+        if (kieu === 'Phần trăm') {
+            lbl.innerHTML = 'Giá trị giảm (%) <span class="text-danger">*</span>';
+        } else {
+            lbl.innerHTML = 'Số tiền giảm (₫) <span class="text-danger">*</span>';
+        }
+    }
+
+    function openEditVoucherModal(id, code, moTa, kieuGiam, giaTri, donToiThieu, giamToiDa, soLan, batDau, ketThuc, hoatDong) {
+        document.getElementById('editVoucherId').value = id;
+        document.getElementById('editVoucherCode').value = code;
+        document.getElementById('editVoucherMoTa').value = moTa;
+        document.getElementById('editVoucherKieuGiam').value = kieuGiam;
+        document.getElementById('editVoucherGiaTri').value = giaTri;
+        document.getElementById('editVoucherDonToiThieu').value = donToiThieu;
+        document.getElementById('editVoucherGiamToiDa').value = giamToiDa;
+        document.getElementById('editVoucherSoLanToiDa').value = soLan;
+        document.getElementById('editVoucherBatDau').value = batDau;
+        document.getElementById('editVoucherKetThuc').value = ketThuc;
+        document.getElementById('editVoucherHoatDong').checked = hoatDong;
+        new bootstrap.Modal(document.getElementById('modalSuaVoucher')).show();
+    }
+
+    function confirmDeleteVoucher(id, code) {
+        document.getElementById('xoaVoucherId').value = id;
+        document.getElementById('xoaVoucherCodeText').textContent = code;
+        new bootstrap.Modal(document.getElementById('modalXoaVoucher')).show();
+    }
+</script>
+}
+
