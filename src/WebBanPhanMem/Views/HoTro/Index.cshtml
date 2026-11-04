@@ -1,0 +1,255 @@
+@model List<WebBanPhanMem.Models.Yeucauhotro>
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Quản lý Hỗ trợ khách hàng";
+
+    var allTickets = Model ?? new List<WebBanPhanMem.Models.Yeucauhotro>();
+    int totalCount = allTickets.Count;
+    int openCount = allTickets.Count(t => t.TrangThai == "Mở");
+    int processingCount = allTickets.Count(t => t.TrangThai == "Đang xử lý");
+    int resolvedCount = allTickets.Count(t => t.TrangThai == "Đã giải quyết" || t.TrangThai == "Đã đóng");
+
+    string searchTerm = ViewBag.SearchTerm as string ?? "";
+    string selectedLoai = ViewBag.SelectedLoai as string ?? "";
+    string selectedTrangThai = ViewBag.SelectedTrangThai as string ?? "";
+}
+
+<div class="admin-page-wrapper">
+    <!-- Page Header -->
+    <div class="page-header-bar">
+        <div>
+            <h1 class="page-title"><i class="bi bi-headset me-2 text-primary"></i>Hỗ trợ khách hàng (Helpdesk)</h1>
+            <p class="page-subtitle">Tiếp nhận yêu cầu bảo hành key, kích hoạt lỗi, khiếu nại hoàn tiền và phản hồi khách</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/Admin/HoTro" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-clockwise me-1"></i> Làm mới
+            </a>
+        </div>
+    </div>
+
+    <!-- Alerts -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show bento-alert" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show bento-alert" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Bento Stats -->
+    <div class="bento-stats-row">
+        <div class="bento-stat-card">
+            <div class="stat-icon bg-primary-soft">
+                <i class="bi bi-inbox text-primary"></i>
+            </div>
+            <div>
+                <div class="stat-value">@totalCount</div>
+                <div class="stat-label">Tổng số yêu cầu</div>
+            </div>
+        </div>
+
+        <div class="bento-stat-card">
+            <div class="stat-icon bg-danger-soft">
+                <i class="bi bi-exclamation-circle text-danger"></i>
+            </div>
+            <div>
+                <div class="stat-value text-danger">@openCount</div>
+                <div class="stat-label">Đang mở (Chờ xử lý)</div>
+            </div>
+        </div>
+
+        <div class="bento-stat-card">
+            <div class="stat-icon bg-warning-soft">
+                <i class="bi bi-hourglass-split text-warning"></i>
+            </div>
+            <div>
+                <div class="stat-value text-warning">@processingCount</div>
+                <div class="stat-label">Đang được giải quyết</div>
+            </div>
+        </div>
+
+        <div class="bento-stat-card">
+            <div class="stat-icon bg-success-soft">
+                <i class="bi bi-check2-all text-success"></i>
+            </div>
+            <div>
+                <div class="stat-value text-success">@resolvedCount</div>
+                <div class="stat-label">Đã giải quyết xong</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="bento-card filter-bar">
+        <form method="get" action="@Url.Action("Index")" class="filter-form">
+            <div class="filter-group">
+                <div class="search-input-wrap">
+                    <i class="bi bi-search search-icon-inner"></i>
+                    <input type="text" name="search" class="form-control search-input"
+                           placeholder="Tìm theo mã yêu cầu (#YC...), họ tên, email, tiêu đề..."
+                           value="@searchTerm" />
+                </div>
+                <select name="loai" class="form-select filter-select" style="min-width: 170px;">
+                    <option value="">-- Tất cả loại --</option>
+                    <option value="Kích hoạt" selected="@(selectedLoai == "Kích hoạt")">Kích hoạt</option>
+                    <option value="Bảo hành" selected="@(selectedLoai == "Bảo hành")">Bảo hành</option>
+                    <option value="Hoàn tiền" selected="@(selectedLoai == "Hoàn tiền")">Hoàn tiền</option>
+                    <option value="Khác" selected="@(selectedLoai == "Khác")">Khác</option>
+                </select>
+                <select name="trangThai" class="form-select filter-select" style="min-width: 170px;">
+                    <option value="">-- Trạng thái xử lý --</option>
+                    <option value="Mở" selected="@(selectedTrangThai == "Mở")">Mở (Mới)</option>
+                    <option value="Đang xử lý" selected="@(selectedTrangThai == "Đang xử lý")">Đang xử lý</option>
+                    <option value="Đã giải quyết" selected="@(selectedTrangThai == "Đã giải quyết")">Đã giải quyết</option>
+                    <option value="Đã đóng" selected="@(selectedTrangThai == "Đã đóng")">Đã đóng</option>
+                </select>
+                <button type="submit" class="btn btn-primary"><i class="bi bi-funnel me-1"></i>Lọc</button>
+                <a href="@Url.Action("Index")" class="btn btn-outline-secondary"><i class="bi bi-x-circle me-1"></i>Xóa lọc</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tickets Table -->
+    <div class="bento-card table-card">
+        <div class="table-responsive">
+            <table class="table admin-table" id="ticketsTable">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">#</th>
+                        <th>Mã Ticket</th>
+                        <th>Người gửi</th>
+                        <th>Tiêu đề yêu cầu</th>
+                        <th>Phân loại</th>
+                        <th>Đơn hàng liên quan</th>
+                        <th>Nhân viên phụ trách</th>
+                        <th>Trạng thái</th>
+                        <th>Cập nhật</th>
+                        <th class="text-center" style="width: 100px;">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!allTickets.Any())
+                    {
+                        <tr>
+                            <td colspan="10" class="text-center py-5 text-muted">
+                                <i class="bi bi-chat-left-dots fs-2 d-block mb-2"></i>
+                                Hiện không có yêu cầu hỗ trợ nào cần xử lý.
+                            </td>
+                        </tr>
+                    }
+                    @{ int idx = 1; }
+                    @foreach (var t in allTickets)
+                    {
+                        <tr>
+                            <td class="text-muted">@idx</td>
+                            <td>
+                                <a href="@Url.Action("Detail", new { id = t.Id })" class="fw-bold font-mono text-primary text-decoration-none">
+                                    #@t.MaYeuCau
+                                </a>
+                                @if (t.Tinnhanhotros.Any())
+                                {
+                                    <span class="badge bg-light text-muted border ms-1"><i class="bi bi-chat me-1"></i>@t.Tinnhanhotros.Count</span>
+                                }
+                            </td>
+                            <td>
+                                <div class="fw-semibold text-dark">@t.HoTen</div>
+                                <small class="text-muted"><i class="bi bi-envelope me-1"></i>@t.Email</small>
+                            </td>
+                            <td>
+                                <div class="fw-bold text-dark text-truncate" style="max-width: 250px;" title="@t.TieuDe">
+                                    @t.TieuDe
+                                </div>
+                            </td>
+                            <td>
+                                @if (t.Loai == "Bảo hành")
+                                {
+                                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1">
+                                        <i class="bi bi-shield-exclamation me-1"></i>Bảo hành
+                                    </span>
+                                }
+                                else if (t.Loai == "Kích hoạt")
+                                {
+                                    <span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1">
+                                        <i class="bi bi-key-fill me-1"></i>Kích hoạt
+                                    </span>
+                                }
+                                else if (t.Loai == "Hoàn tiền")
+                                {
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">
+                                        <i class="bi bi-cash me-1"></i>Hoàn tiền
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary-subtle text-secondary border px-2 py-1">Khác</span>
+                                }
+                            </td>
+                            <td>
+                                @if (t.DonHang != null)
+                                {
+                                    <a href="/Admin/DonHang/Detail/@t.DonHangId" class="badge bg-light text-primary border font-mono text-decoration-none">
+                                        #@t.DonHang.MaDonHang
+                                    </a>
+                                }
+                                else
+                                {
+                                    <span class="text-muted small">—</span>
+                                }
+                            </td>
+                            <td>
+                                @if (t.NhanVienPhuTrach != null)
+                                {
+                                    <div class="small fw-semibold text-dark"><i class="bi bi-person-check me-1 text-primary"></i>@t.NhanVienPhuTrach.HoTen</div>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-light text-danger border border-danger-subtle">Chưa phân công</span>
+                                }
+                            </td>
+                            <td>
+                                @if (t.TrangThai == "Mở")
+                                {
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">
+                                        <i class="bi bi-circle-fill me-1"></i>Mở
+                                    </span>
+                                }
+                                else if (t.TrangThai == "Đang xử lý")
+                                {
+                                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1">
+                                        <i class="bi bi-arrow-repeat me-1"></i>Đang xử lý
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                                        <i class="bi bi-check-circle-fill me-1"></i>@t.TrangThai
+                                    </span>
+                                }
+                            </td>
+                            <td>
+                                <small class="text-muted font-mono">@t.NgayCapNhat.ToString("dd/MM/yyyy HH:mm")</small>
+                            </td>
+                            <td>
+                                <div class="action-buttons justify-content-center">
+                                    <a href="@Url.Action("Detail", new { id = t.Id })" class="btn-action btn-info" title="Xử lý ticket & Phản hồi">
+                                        <i class="bi bi-chat-dots-fill"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        idx++;
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+

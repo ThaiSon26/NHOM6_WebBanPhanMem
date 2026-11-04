@@ -1,0 +1,209 @@
+@model WebBanPhanMem.Models.Yeucauhotro
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Xử lý yêu cầu #" + Model.MaYeuCau;
+
+    var nhanViens = ViewBag.NhanVienList as List<WebBanPhanMem.Models.Taikhoan> ?? new();
+    var messages = Model.Tinnhanhotros.OrderBy(m => m.NgayTao).ToList();
+}
+
+<div class="admin-page-wrapper">
+    <!-- Breadcrumb & Header -->
+    <div class="page-header-bar">
+        <div>
+            <nav aria-label="breadcrumb" class="mb-1">
+                <ol class="breadcrumb breadcrumb-sm">
+                    <li class="breadcrumb-item"><a href="/Admin">Tổng quan</a></li>
+                    <li class="breadcrumb-item"><a href="/Admin/HoTro">Hỗ trợ</a></li>
+                    <li class="breadcrumb-item active font-mono">#@Model.MaYeuCau</li>
+                </ol>
+            </nav>
+            <h1 class="page-title"><i class="bi bi-chat-dots-fill me-2 text-primary"></i>Yêu cầu #@Model.MaYeuCau: @Model.TieuDe</h1>
+            <p class="page-subtitle">Loại: <strong>@Model.Loai</strong> · Gửi ngày: <strong>@Model.NgayTao.ToString("dd/MM/yyyy HH:mm")</strong></p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/Admin/HoTro" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Quay lại danh sách
+            </a>
+        </div>
+    </div>
+
+    <!-- Alerts -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show bento-alert" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show bento-alert" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row g-4">
+        <!-- LEFT: Khung hội thoại tin nhắn trao đổi -->
+        <div class="col-lg-8">
+            <div class="bento-card mb-4" style="min-height: 500px; display: flex; flex-direction: column;">
+                <div class="d-flex justify-content-between align-items-center pb-3 mb-3 border-bottom">
+                    <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-chat-text me-2 text-primary"></i>Lịch sử trao đổi tin nhắn</h5>
+                    <span class="badge bg-primary-subtle text-primary">@messages.Count tin nhắn</span>
+                </div>
+
+                <!-- Danh sách tin nhắn -->
+                <div class="chat-history-box flex-grow-1 p-2" style="max-height: 450px; overflow-y: auto;">
+                    <!-- Tin nhắn gốc khởi tạo của khách -->
+                    <div class="d-flex mb-3">
+                        <div class="user-avatar me-2 flex-shrink-0" style="background: #e2e8f0; color: #475569;">
+                            KH
+                        </div>
+                        <div class="bg-light p-3 rounded-4 border w-100">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="fw-bold text-dark">@Model.HoTen <small class="text-muted fw-normal">(Khách hàng)</small></span>
+                                <small class="text-muted font-mono">@Model.NgayTao.ToString("dd/MM/yyyy HH:mm")</small>
+                            </div>
+                            <div class="fw-semibold text-primary mb-1">Tiêu đề: @Model.TieuDe</div>
+                            <div class="text-body">Phân loại: <span class="badge bg-secondary">@Model.Loai</span></div>
+                        </div>
+                    </div>
+
+                    @foreach (var msg in messages)
+                    {
+                        bool isStaff = msg.NguoiGui != Model.HoTen;
+                        <div class="d-flex mb-3 @(isStaff ? "flex-row-reverse" : "")">
+                            <div class="user-avatar @(isStaff ? "ms-2 bg-primary text-white" : "me-2 bg-light text-dark") flex-shrink-0">
+                                @(isStaff ? "NV" : "KH")
+                            </div>
+                            <div class="p-3 rounded-4 border @(isStaff ? "bg-primary-subtle border-primary-subtle" : "bg-light")" style="max-width: 80%;">
+                                <div class="d-flex justify-content-between gap-3 mb-1">
+                                    <span class="fw-bold @(isStaff ? "text-primary" : "text-dark")">@msg.NguoiGui</span>
+                                    <small class="text-muted font-mono">@msg.NgayTao.ToString("dd/MM/yyyy HH:mm")</small>
+                                </div>
+                                <div class="text-body" style="white-space: pre-wrap;">@msg.NoiDung</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <!-- Khung soạn tin phản hồi -->
+                <div class="pt-3 border-top mt-auto">
+                    <form asp-action="SendReply" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="yeuCauId" value="@Model.Id" />
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small text-muted">Soạn phản hồi gửi đến khách hàng:</label>
+                            <textarea name="noiDung" class="form-control" rows="3" placeholder="Nhập câu trả lời hoặc thông tin hướng dẫn giải quyết..." required></textarea>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="small text-muted">Cập nhật trạng thái sau khi gửi:</span>
+                                <select name="trangThaiMoi" class="form-select form-select-sm" style="width: 160px;">
+                                    <option value="Đang xử lý" selected="@(Model.TrangThai == "Đang xử lý")">Đang xử lý</option>
+                                    <option value="Đã giải quyết" selected="@(Model.TrangThai == "Đã giải quyết")">Đã giải quyết</option>
+                                    <option value="Đã đóng" selected="@(Model.TrangThai == "Đã đóng")">Đã đóng</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary fw-semibold px-4">
+                                <i class="bi bi-send-fill me-1"></i> Gửi phản hồi
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: Phân công & Thông tin khách & Đơn hàng -->
+        <div class="col-lg-4">
+            <!-- Cập nhật phân công & Trạng thái -->
+            <div class="bento-card mb-4">
+                <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-shield-check me-2 text-primary"></i>Phân công xử lý</h5>
+                <form asp-action="UpdateAssignment" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-muted">Nhân viên phụ trách</label>
+                        <select name="nhanVienPhuTrachId" class="form-select fw-semibold">
+                            <option value="0">-- Chưa phân công --</option>
+                            @foreach (var nv in nhanViens)
+                            {
+                                <option value="@nv.Id" selected="@(Model.NhanVienPhuTrachId == nv.Id)">
+                                    @nv.HoTen (@nv.VaiTro)
+                                </option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-muted">Trạng thái ticket</label>
+                        <select name="trangThai" class="form-select fw-semibold">
+                            <option value="Mở" selected="@(Model.TrangThai == "Mở")">Mở (Mới)</option>
+                            <option value="Đang xử lý" selected="@(Model.TrangThai == "Đang xử lý")">Đang xử lý</option>
+                            <option value="Đã giải quyết" selected="@(Model.TrangThai == "Đã giải quyết")">Đã giải quyết</option>
+                            <option value="Đã đóng" selected="@(Model.TrangThai == "Đã đóng")">Đã đóng</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 fw-semibold">
+                        <i class="bi bi-save me-1"></i> Lưu phân công
+                    </button>
+                </form>
+            </div>
+
+            <!-- Thông tin người gửi -->
+            <div class="bento-card mb-4">
+                <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-person-circle me-2 text-primary"></i>Người gửi yêu cầu</h5>
+                <div class="info-list">
+                    <div class="info-row">
+                        <span class="info-label">Họ tên:</span>
+                        <span class="info-value fw-bold text-dark">@Model.HoTen</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Email:</span>
+                        <span class="info-value"><a href="mailto:@Model.Email" class="text-decoration-none">@Model.Email</a></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Tài khoản:</span>
+                        <span class="info-value">@(Model.TaiKhoan != null ? Model.TaiKhoan.HoTen : "Chưa đăng nhập")</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Phân loại:</span>
+                        <span class="badge bg-secondary">@Model.Loai</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Đơn hàng liên quan -->
+            <div class="bento-card">
+                <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-receipt me-2 text-primary"></i>Đơn hàng liên quan</h5>
+                @if (Model.DonHang != null)
+                {
+                    <div class="info-list mb-3">
+                        <div class="info-row">
+                            <span class="info-label">Mã đơn:</span>
+                            <a href="/Admin/DonHang/Detail/@Model.DonHangId" class="info-value font-mono fw-bold text-primary text-decoration-none">
+                                #@Model.DonHang.MaDonHang
+                            </a>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Tổng tiền:</span>
+                            <span class="info-value font-mono fw-bold text-dark">@Model.DonHang.TongThanhToan.ToString("N0")₫</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Trạng thái:</span>
+                            <span class="badge bg-success-subtle text-success">@Model.DonHang.TrangThai</span>
+                        </div>
+                    </div>
+                    <a href="/Admin/DonHang/Detail/@Model.DonHangId" class="btn btn-outline-primary w-100 fw-semibold btn-sm">
+                        <i class="bi bi-eye me-1"></i> Xem chi tiết đơn hàng
+                    </a>
+                }
+                else
+                {
+                    <p class="small text-muted mb-0">Yêu cầu này không gắn với đơn hàng cụ thể nào.</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+

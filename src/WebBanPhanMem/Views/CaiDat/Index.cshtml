@@ -1,0 +1,119 @@
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Cài đặt hệ thống & Cấu hình";
+
+    string siteName = ViewBag.SiteName as string ?? "";
+    string hotline = ViewBag.Hotline as string ?? "";
+    string contactEmail = ViewBag.ContactEmail as string ?? "";
+    string address = ViewBag.Address as string ?? "";
+    string defaultVatRate = ViewBag.DefaultVatRate as string ?? "10";
+    string maintenanceMode = ViewBag.MaintenanceMode as string ?? "false";
+    string seoTitle = ViewBag.SeoTitle as string ?? "";
+    string seoDescription = ViewBag.SeoDescription as string ?? "";
+    string facebookUrl = ViewBag.FacebookUrl as string ?? "";
+}
+
+<div class="admin-page-wrapper">
+    <!-- Page Header -->
+    <div class="page-header-bar">
+        <div>
+            <h1 class="page-title"><i class="bi bi-gear-fill me-2 text-primary"></i>Cài đặt hệ thống & Cấu hình</h1>
+            <p class="page-subtitle">Quản lý các thông số chung, thông tin liên hệ, thuế VAT và cấu hình bảo mật website</p>
+        </div>
+    </div>
+
+    <!-- Alerts -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show bento-alert" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show bento-alert" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <form asp-action="SaveSettings" method="post">
+        @Html.AntiForgeryToken()
+
+        <div class="row g-4">
+            <!-- Cột trái: Thông tin cửa hàng & Liên hệ -->
+            <div class="col-lg-6">
+                <div class="bento-card h-100">
+                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-shop me-2 text-primary"></i>Thông tin cửa hàng & Liên hệ</h5>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Tên website / Thương hiệu <span class="text-danger">*</span></label>
+                            <input type="text" name="SiteName" class="form-control" value="@siteName" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Hotline hỗ trợ</label>
+                            <input type="text" name="Hotline" class="form-control font-mono" value="@hotline" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Email tiếp nhận liên hệ</label>
+                            <input type="email" name="ContactEmail" class="form-control" value="@contactEmail" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Địa chỉ văn phòng / Trụ sở</label>
+                            <input type="text" name="Address" class="form-control" value="@address" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Đường dẫn Fanpage Facebook</label>
+                            <input type="url" name="FacebookUrl" class="form-control" value="@facebookUrl" placeholder="https://facebook.com/..." />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cột phải: Bán hàng, Thuế VAT & SEO -->
+            <div class="col-lg-6">
+                <div class="bento-card mb-4">
+                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-currency-dollar me-2 text-success"></i>Bán hàng & Vận hành</h5>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Thuế suất GTGT (VAT) mặc định (%)</label>
+                            <input type="number" name="DefaultVatRate" class="form-control font-mono" value="@defaultVatRate" min="0" max="100" />
+                            <small class="text-muted">Áp dụng khi xuất hóa đơn điện tử</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Trạng thái bảo trì</label>
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input" type="checkbox" name="MaintenanceMode" value="true" id="chkMaintenance" @(maintenanceMode == "true" ? "checked" : "")>
+                                <label class="form-check-label" for="chkMaintenance">Bật chế độ bảo trì</label>
+                            </div>
+                            <small class="text-muted">Chỉ tài khoản Quản trị mới truy cập được khi bật</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bento-card">
+                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-search me-2 text-info"></i>Cấu hình SEO & Tìm kiếm</h5>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Tiêu đề trang chủ (SEO Title)</label>
+                            <input type="text" name="SeoTitle" class="form-control" value="@seoTitle" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Mô tả ngắn trang (Meta Description)</label>
+                            <textarea name="SeoDescription" class="form-control" rows="3">@seoDescription</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nút lưu cài đặt -->
+            <div class="col-12 text-end">
+                <button type="submit" class="btn btn-primary px-5 py-2 fw-semibold fs-6">
+                    <i class="bi bi-save me-1"></i> Lưu toàn bộ cài đặt
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
