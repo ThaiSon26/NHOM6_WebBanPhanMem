@@ -1,0 +1,357 @@
+@model WebBanPhanMem.Models.Donhang
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Chi tiết đơn hàng #" + Model.MaDonHang;
+
+    var danhSachKey = ViewBag.DanhSachKey as List<WebBanPhanMem.Models.Khokey> ?? new();
+}
+
+<div class="admin-page-wrapper">
+    <!-- Breadcrumb & Header -->
+    <div class="page-header-bar">
+        <div>
+            <nav aria-label="breadcrumb" class="mb-1">
+                <ol class="breadcrumb breadcrumb-sm">
+                    <li class="breadcrumb-item"><a href="/Admin">Tổng quan</a></li>
+                    <li class="breadcrumb-item"><a href="/Admin/DonHang">Đơn hàng</a></li>
+                    <li class="breadcrumb-item active font-mono">#@Model.MaDonHang</li>
+                </ol>
+            </nav>
+            <h1 class="page-title"><i class="bi bi-receipt me-2 text-primary"></i>Đơn hàng #@Model.MaDonHang</h1>
+            <p class="page-subtitle">Ngày tạo: <strong>@Model.NgayTao.ToString("dd/MM/yyyy HH:mm:ss")</strong> · IP: <code class="text-muted">@(Model.DiaChiIp ?? "127.0.0.1")</code></p>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+            <a href="/Admin/DonHang" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Quay lại
+            </a>
+            @if (Model.Hoadons.Any())
+            {
+                var hd = Model.Hoadons.First();
+                <a href="@Url.Action("InHoaDon", new { id = hd.Id })" target="_blank" class="btn btn-outline-primary fw-semibold">
+                    <i class="bi bi-printer me-1"></i> In hóa đơn VAT (@hd.SoHoaDon)
+                </a>
+            }
+            else
+            {
+                <button class="btn btn-primary fw-semibold" data-bs-toggle="modal" data-bs-target="#modalXuatHoaDon">
+                    <i class="bi bi-file-earmark-plus me-1"></i> Xuất hóa đơn VAT
+                </button>
+            }
+        </div>
+    </div>
+
+    <!-- Alerts -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show bento-alert" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show bento-alert" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row g-4">
+        <!-- LEFT: Chi tiết sản phẩm & Key giao dịch -->
+        <div class="col-lg-8">
+            <!-- Sản phẩm trong đơn -->
+            <div class="bento-card mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-box-seam me-2 text-primary"></i>Danh sách sản phẩm mua</h5>
+                    <span class="badge bg-primary-subtle text-primary">@Model.Chitietdonhangs.Count món</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table admin-table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Sản phẩm & Gói</th>
+                                <th class="text-center">Số lượng</th>
+                                <th class="text-end">Đơn giá</th>
+                                <th class="text-end">Thành tiền</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.Chitietdonhangs)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="fw-semibold text-dark">@item.TenSanPham</div>
+                                        <small class="text-muted"><i class="bi bi-key me-1"></i>Gói: @(item.GoiBanQuyen?.TenGoiBanQuyen ?? "Bản quyền chuẩn")</small>
+                                    </td>
+                                    <td class="text-center fw-semibold">@item.SoLuong</td>
+                                    <td class="text-end font-mono text-muted">@item.DonGia.ToString("N0")₫</td>
+                                    <td class="text-end font-mono fw-bold text-dark">@item.ThanhTien.ToString("N0")₫</td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="3" class="text-end text-muted">Tổng tiền hàng:</td>
+                                <td class="text-end font-mono fw-semibold">@Model.TongTienHang.ToString("N0")₫</td>
+                            </tr>
+                            @if (Model.TienGiamGia > 0)
+                            {
+                                <tr>
+                                    <td colspan="3" class="text-end text-success">
+                                        <i class="bi bi-tag-fill me-1"></i>Giảm giá voucher:
+                                    </td>
+                                    <td class="text-end font-mono text-success fw-bold">-@Model.TienGiamGia.ToString("N0")₫</td>
+                                </tr>
+                            }
+                            <tr class="table-active">
+                                <td colspan="3" class="text-end fw-bold text-dark fs-6">Tổng thanh toán:</td>
+                                <td class="text-end font-mono fw-bold text-primary fs-5">@Model.TongThanhToan.ToString("N0")₫</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <!-- License Key đã bàn giao -->
+            <div class="bento-card mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-key-fill me-2 text-warning"></i>License Key đã kích hoạt / Giao cho đơn</h5>
+                    <span class="badge bg-success-subtle text-success">@danhSachKey.Count key</span>
+                </div>
+                @if (!danhSachKey.Any())
+                {
+                    <div class="text-center py-4 text-muted">
+                        <i class="bi bi-key fs-2 d-block mb-2 opacity-50"></i>
+                        Đơn hàng này chưa có key nào được gán trực tiếp. (Có thể đơn đang xử lý hoặc chưa xuất tự động).
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table admin-table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Mã Key</th>
+                                    <th>Loại Key</th>
+                                    <th>Thời điểm giao</th>
+                                    <th>Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var k in danhSachKey)
+                                {
+                                    <tr>
+                                        <td>
+                                            <span class="font-mono fw-bold text-dark">@k.MaKey</span>
+                                        </td>
+                                        <td><span class="badge bg-light text-dark border font-mono">@k.LoaiKey</span></td>
+                                        <td><small class="text-muted font-mono">@(k.ThoiDiemGiaoKey.HasValue ? k.ThoiDiemGiaoKey.Value.ToString("dd/MM/yyyy HH:mm") : "—")</small></td>
+                                        <td>
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                                <i class="bi bi-check-circle me-1"></i>@k.TrangThai
+                                            </span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+
+            <!-- Lịch sử giao dịch & Thanh toán -->
+            <div class="bento-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-credit-card-2-front me-2 text-info"></i>Lịch sử giao dịch thanh toán</h5>
+                    <span class="badge bg-info-subtle text-info">@Model.Thanhtoans.Count giao dịch</span>
+                </div>
+                @if (!Model.Thanhtoans.Any())
+                {
+                    <div class="text-center py-3 text-muted">
+                        Chưa có bản ghi giao dịch cổng thanh toán nào được lưu.
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table admin-table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Phương thức</th>
+                                    <th>Mã GD Cổng</th>
+                                    <th>Số tiền</th>
+                                    <th>Trạng thái</th>
+                                    <th>Thời gian</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var tt in Model.Thanhtoans)
+                                {
+                                    <tr>
+                                        <td><span class="fw-semibold text-dark">@tt.PhuongThuc</span></td>
+                                        <td><code class="text-muted font-mono">@(tt.MaGiaoDich ?? "—")</code></td>
+                                        <td class="font-mono fw-bold text-dark">@tt.SoTien.ToString("N0")₫</td>
+                                        <td>
+                                            <span class="badge bg-success-subtle text-success">@tt.TrangThai</span>
+                                        </td>
+                                        <td><small class="text-muted font-mono">@(tt.ThoiDiemThanhToan.HasValue ? tt.ThoiDiemThanhToan.Value.ToString("dd/MM/yyyy HH:mm") : "—")</small></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- RIGHT: Trạng thái & Thông tin khách hàng & Hóa đơn -->
+        <div class="col-lg-4">
+            <!-- Cập nhật trạng thái đơn -->
+            <div class="bento-card mb-4">
+                <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-arrow-repeat me-2 text-primary"></i>Cập nhật trạng thái</h5>
+                <form asp-action="UpdateStatus" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-muted">Trạng thái đơn hàng</label>
+                        <select name="trangThai" class="form-select fw-semibold">
+                            <option value="Chờ xử lý" selected="@(Model.TrangThai == "Chờ xử lý")">Chờ xử lý</option>
+                            <option value="Đã thanh toán" selected="@(Model.TrangThai == "Đã thanh toán")">Đã thanh toán</option>
+                            <option value="Đang xử lý" selected="@(Model.TrangThai == "Đang xử lý")">Đang xử lý</option>
+                            <option value="Hoàn thành" selected="@(Model.TrangThai == "Hoàn thành")">Hoàn thành</option>
+                            <option value="Đã hủy" selected="@(Model.TrangThai == "Đã hủy")">Đã hủy</option>
+                            <option value="Hoàn tiền" selected="@(Model.TrangThai == "Hoàn tiền")">Hoàn tiền</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-muted">Ghi chú quản trị (Nội bộ)</label>
+                        <textarea name="ghiChuQuanTri" class="form-control" rows="3" placeholder="Nhập ghi chú xử lý đơn...">@Model.GhiChuQuanTri</textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 fw-semibold">
+                        <i class="bi bi-save me-1"></i> Lưu trạng thái
+                    </button>
+                </form>
+            </div>
+
+            <!-- Thông tin khách hàng -->
+            <div class="bento-card mb-4">
+                <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-person-circle me-2 text-primary"></i>Thông tin người mua</h5>
+                <div class="info-list">
+                    <div class="info-row">
+                        <span class="info-label">Tên khách:</span>
+                        <span class="info-value fw-bold text-dark">@Model.TenKhachHang</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Email:</span>
+                        <span class="info-value"><a href="mailto:@Model.EmailKhachHang" class="text-decoration-none">@Model.EmailKhachHang</a></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Số điện thoại:</span>
+                        <span class="info-value font-mono">@(Model.SoDienThoai ?? "—")</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Tài khoản web:</span>
+                        <span class="info-value">@(Model.TaiKhoan != null ? (Model.TaiKhoan.HoTen + " (" + Model.TaiKhoan.Email + ")") : "Khách vãng lai")</span>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.GhiChuKhach))
+                    {
+                        <div class="mt-2 pt-2 border-top">
+                            <span class="info-label d-block mb-1">Ghi chú từ khách:</span>
+                            <p class="small text-muted fst-italic mb-0">"@Model.GhiChuKhach"</p>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Thông tin Hóa đơn VAT -->
+            <div class="bento-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-file-earmark-text me-2 text-primary"></i>Hóa đơn điện tử VAT</h5>
+                </div>
+                @if (Model.Hoadons.Any())
+                {
+                    var hd = Model.Hoadons.First();
+                    <div class="info-list mb-3">
+                        <div class="info-row">
+                            <span class="info-label">Số HĐ:</span>
+                            <span class="info-value font-mono fw-bold text-primary">@hd.SoHoaDon</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Đơn vị:</span>
+                            <span class="info-value">@hd.TenDonVi</span>
+                        </div>
+                        @if (!string.IsNullOrEmpty(hd.MaSoThue))
+                        {
+                            <div class="info-row">
+                                <span class="info-label">Mã số thuế:</span>
+                                <span class="info-value font-mono">@hd.MaSoThue</span>
+                            </div>
+                        }
+                        <div class="info-row">
+                            <span class="info-label">Thuế suất:</span>
+                            <span class="info-value">@hd.ThueSuat%</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Trạng thái:</span>
+                            <span class="badge bg-success-subtle text-success">@hd.TrangThai</span>
+                        </div>
+                    </div>
+                    <a href="@Url.Action("InHoaDon", new { id = hd.Id })" target="_blank" class="btn btn-outline-primary w-100 fw-semibold">
+                        <i class="bi bi-printer me-1"></i> Xem & In Hóa Đơn
+                    </a>
+                }
+                else
+                {
+                    <p class="small text-muted mb-3">Đơn hàng này chưa được xuất hóa đơn VAT.</p>
+                    <button class="btn btn-outline-primary w-100 fw-semibold" data-bs-toggle="modal" data-bs-target="#modalXuatHoaDon">
+                        <i class="bi bi-plus-circle me-1"></i> Xuất hóa đơn VAT ngay
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== Modal Xuất Hóa Đơn VAT ===== -->
+<div class="modal fade admin-modal" id="modalXuatHoaDon" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-file-earmark-plus me-2 text-primary"></i>Xuất Hóa đơn điện tử VAT</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="CreateHoaDon" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="donHangId" value="@Model.Id" />
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Tên cá nhân / Tên công ty <span class="text-danger">*</span></label>
+                            <input type="text" name="tenDonVi" class="form-control" value="@Model.TenKhachHang" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Mã số thuế (nếu có)</label>
+                            <input type="text" name="maSoThue" class="form-control font-mono" placeholder="VD: 0101234567" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Thuế suất VAT (%)</label>
+                            <input type="number" name="thueSuat" class="form-control font-mono" value="10" min="0" max="100" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Email nhận hóa đơn <span class="text-danger">*</span></label>
+                            <input type="email" name="email" class="form-control" value="@Model.EmailKhachHang" required />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Địa chỉ cơ quan / Đơn vị</label>
+                            <textarea name="diaChi" class="form-control" rows="2" placeholder="Số nhà, đường, quận/huyện, tỉnh/thành phố..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle me-1"></i>Phát hành hóa đơn</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

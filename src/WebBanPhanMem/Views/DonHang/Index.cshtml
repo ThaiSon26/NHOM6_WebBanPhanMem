@@ -1,0 +1,242 @@
+@model List<WebBanPhanMem.Models.Donhang>
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Quản lý Đơn hàng & Hóa đơn";
+
+    var allOrders = Model ?? new List<WebBanPhanMem.Models.Donhang>();
+    int totalCount = allOrders.Count;
+    int pendingCount = allOrders.Count(d => d.TrangThai == "Chờ xử lý" || d.TrangThai == "Đang xử lý");
+    int paidCount = allOrders.Count(d => d.TrangThai == "Đã thanh toán" || d.TrangThai == "Hoàn thành");
+    int cancelCount = allOrders.Count(d => d.TrangThai == "Đã hủy" || d.TrangThai == "Hoàn tiền");
+
+    decimal totalRevenue = allOrders
+        .Where(d => d.TrangThai == "Đã thanh toán" || d.TrangThai == "Hoàn thành")
+        .Sum(d => d.TongThanhToan);
+
+    string searchTerm = ViewBag.SearchTerm as string ?? "";
+    string selectedTrangThai = ViewBag.SelectedTrangThai as string ?? "";
+    string tuNgay = ViewBag.TuNgay as string ?? "";
+    string denNgay = ViewBag.DenNgay as string ?? "";
+}
+
+<div class="admin-page-wrapper">
+    <!-- Page Header -->
+    <div class="page-header-bar">
+        <div>
+            <h1 class="page-title"><i class="bi bi-receipt-cutoff me-2 text-primary"></i>Quản lý Đơn hàng & Hóa đơn</h1>
+            <p class="page-subtitle">Theo dõi đơn đặt mua phần mềm, thanh toán trực tuyến và xuất hóa đơn điện tử VAT</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/Admin/DonHang" class="btn btn-outline-secondary fw-semibold">
+                <i class="bi bi-arrow-clockwise me-1"></i> Làm mới
+            </a>
+        </div>
+    </div>
+
+    <!-- Alerts -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show bento-alert" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show bento-alert" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Bento Stats Row -->
+    <div class="bento-stats-row">
+        <div class="bento-stat-card">
+            <div class="stat-icon bg-primary-soft">
+                <i class="bi bi-receipt text-primary"></i>
+            </div>
+            <div>
+                <div class="stat-value">@totalCount</div>
+                <div class="stat-label">Tổng đơn đặt hàng</div>
+            </div>
+        </div>
+
+        <div class="bento-stat-card">
+            <div class="stat-icon bg-success-soft">
+                <i class="bi bi-cash-stack text-success"></i>
+            </div>
+            <div>
+                <div class="stat-value text-success">@totalRevenue.ToString("N0")₫</div>
+                <div class="stat-label">Doanh thu thực nhận</div>
+            </div>
+        </div>
+
+        <div class="bento-stat-card">
+            <div class="stat-icon bg-warning-soft">
+                <i class="bi bi-hourglass-split text-warning"></i>
+            </div>
+            <div>
+                <div class="stat-value">@pendingCount</div>
+                <div class="stat-label">Đang chờ xử lý / giao key</div>
+            </div>
+        </div>
+
+        <div class="bento-stat-card">
+            <div class="stat-icon bg-info-soft">
+                <i class="bi bi-check2-circle text-info"></i>
+            </div>
+            <div>
+                <div class="stat-value">@paidCount</div>
+                <div class="stat-label">Đã thanh toán / Hoàn thành</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter & Search Bar -->
+    <div class="bento-card filter-bar">
+        <form method="get" action="@Url.Action("Index")" class="filter-form">
+            <div class="filter-group">
+                <div class="search-input-wrap">
+                    <i class="bi bi-search search-icon-inner"></i>
+                    <input type="text" name="search" class="form-control search-input"
+                           placeholder="Tìm theo mã đơn (#SD...), tên, email, SĐT khách..."
+                           value="@searchTerm" />
+                </div>
+                <select name="trangThai" class="form-select filter-select" style="min-width: 170px;">
+                    <option value="">-- Mọi trạng thái --</option>
+                    <option value="Chờ xử lý" selected="@(selectedTrangThai == "Chờ xử lý")">Chờ xử lý</option>
+                    <option value="Đã thanh toán" selected="@(selectedTrangThai == "Đã thanh toán")">Đã thanh toán</option>
+                    <option value="Đang xử lý" selected="@(selectedTrangThai == "Đang xử lý")">Đang xử lý</option>
+                    <option value="Hoàn thành" selected="@(selectedTrangThai == "Hoàn thành")">Hoàn thành</option>
+                    <option value="Đã hủy" selected="@(selectedTrangThai == "Đã hủy")">Đã hủy</option>
+                    <option value="Hoàn tiền" selected="@(selectedTrangThai == "Hoàn tiền")">Hoàn tiền</option>
+                </select>
+                <div class="d-flex align-items-center gap-1">
+                    <span class="small text-muted">Từ:</span>
+                    <input type="date" name="tuNgay" class="form-control form-control-sm" value="@tuNgay" style="width: 135px;" />
+                </div>
+                <div class="d-flex align-items-center gap-1">
+                    <span class="small text-muted">Đến:</span>
+                    <input type="date" name="denNgay" class="form-control form-control-sm" value="@denNgay" style="width: 135px;" />
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-funnel me-1"></i>Lọc
+                </button>
+                <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-circle me-1"></i>Xóa lọc
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Orders Table -->
+    <div class="bento-card table-card">
+        <div class="table-responsive">
+            <table class="table admin-table" id="ordersTable">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">#</th>
+                        <th>Mã đơn hàng</th>
+                        <th>Khách hàng</th>
+                        <th>Sản phẩm đặt</th>
+                        <th>Tổng tiền</th>
+                        <th>Trạng thái đơn</th>
+                        <th>Hóa đơn</th>
+                        <th>Ngày đặt</th>
+                        <th class="text-center" style="width: 110px;">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!allOrders.Any())
+                    {
+                        <tr>
+                            <td colspan="9" class="text-center py-5 text-muted">
+                                <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                                Chưa có đơn hàng nào hoặc không tìm thấy đơn phù hợp với bộ lọc.
+                            </td>
+                        </tr>
+                    }
+                    @{ int idx = 1; }
+                    @foreach (var d in allOrders)
+                    {
+                        <tr>
+                            <td class="text-muted">@idx</td>
+                            <td>
+                                <a href="@Url.Action("Detail", new { id = d.Id })" class="fw-bold text-primary font-mono text-decoration-none">
+                                    #@d.MaDonHang
+                                </a>
+                            </td>
+                            <td>
+                                <div class="fw-semibold text-dark">@d.TenKhachHang</div>
+                                <small class="text-muted"><i class="bi bi-envelope me-1"></i>@d.EmailKhachHang</small>
+                                @if (!string.IsNullOrEmpty(d.SoDienThoai))
+                                {
+                                    <small class="text-muted d-block font-mono"><i class="bi bi-telephone me-1"></i>@d.SoDienThoai</small>
+                                }
+                            </td>
+                            <td>
+                                <div class="small fw-semibold text-dark">
+                                    @d.Chitietdonhangs.Count món
+                                </div>
+                                <small class="text-muted text-truncate d-inline-block" style="max-width: 180px;">
+                                    @string.Join(", ", d.Chitietdonhangs.Select(c => c.TenSanPham))
+                                </small>
+                            </td>
+                            <td>
+                                <div class="fw-bold text-dark font-mono">@d.TongThanhToan.ToString("N0")₫</div>
+                                @if (d.TienGiamGia > 0)
+                                {
+                                    <small class="text-success"><i class="bi bi-tag-fill me-1"></i>-@d.TienGiamGia.ToString("N0")₫</small>
+                                }
+                            </td>
+                            <td>
+                                @if (d.TrangThai == "Hoàn thành" || d.TrangThai == "Đã thanh toán")
+                                {
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                                        <i class="bi bi-check-circle-fill me-1"></i>@d.TrangThai
+                                    </span>
+                                }
+                                else if (d.TrangThai == "Chờ xử lý" || d.TrangThai == "Đang xử lý")
+                                {
+                                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1">
+                                        <i class="bi bi-clock-history me-1"></i>@d.TrangThai
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">
+                                        <i class="bi bi-x-circle-fill me-1"></i>@d.TrangThai
+                                    </span>
+                                }
+                            </td>
+                            <td>
+                                @if (d.Hoadons.Any())
+                                {
+                                    <span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1">
+                                        <i class="bi bi-file-earmark-check me-1"></i>Đã xuất VAT
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted small">Chưa xuất</span>
+                                }
+                            </td>
+                            <td>
+                                <small class="text-muted font-mono">@d.NgayTao.ToString("dd/MM/yyyy HH:mm")</small>
+                            </td>
+                            <td>
+                                <div class="action-buttons justify-content-center">
+                                    <a href="@Url.Action("Detail", new { id = d.Id })" class="btn-action btn-info" title="Xem chi tiết đơn hàng & hóa đơn">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        idx++;
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
