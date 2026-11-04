@@ -1,0 +1,213 @@
+@model WebBanPhanMem.Models.Taikhoan
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Hồ sơ người dùng: " + Model.HoTen;
+
+    var donHangs = Model.Donhangs.OrderByDescending(d => d.NgayTao).ToList();
+    decimal tongChiTieu = donHangs
+        .Where(d => d.TrangThai == "Đã thanh toán" || d.TrangThai == "Hoàn thành")
+        .Sum(d => d.TongThanhToan);
+}
+
+<div class="admin-page-wrapper">
+    <!-- Header & Breadcrumb -->
+    <div class="page-header-bar">
+        <div>
+            <nav aria-label="breadcrumb" class="mb-1">
+                <ol class="breadcrumb breadcrumb-sm">
+                    <li class="breadcrumb-item"><a href="/Admin">Tổng quan</a></li>
+                    <li class="breadcrumb-item"><a href="/Admin/NguoiDung">Người dùng</a></li>
+                    <li class="breadcrumb-item active">@Model.HoTen</li>
+                </ol>
+            </nav>
+            <h1 class="page-title"><i class="bi bi-person-badge me-2 text-primary"></i>Hồ sơ: @Model.HoTen</h1>
+            <p class="page-subtitle">Email: <strong>@Model.Email</strong> · Vai trò: <span class="badge bg-primary-subtle text-primary">@Model.VaiTro</span></p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/Admin/NguoiDung" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Quay lại
+            </a>
+        </div>
+    </div>
+
+    <!-- Bento Stats -->
+    <div class="bento-stats-row">
+        <div class="bento-stat-card">
+            <div class="stat-icon bg-primary-soft">
+                <i class="bi bi-bag-check text-primary"></i>
+            </div>
+            <div>
+                <div class="stat-value">@donHangs.Count</div>
+                <div class="stat-label">Tổng đơn đã đặt</div>
+            </div>
+        </div>
+
+        <div class="bento-stat-card">
+            <div class="stat-icon bg-success-soft">
+                <i class="bi bi-cash-coin text-success"></i>
+            </div>
+            <div>
+                <div class="stat-value text-success">@tongChiTieu.ToString("N0")₫</div>
+                <div class="stat-label">Tổng chi tiêu tích lũy</div>
+            </div>
+        </div>
+
+        <div class="bento-stat-card">
+            <div class="stat-icon bg-info-soft">
+                <i class="bi bi-calendar-check text-info"></i>
+            </div>
+            <div>
+                <div class="stat-value fs-5">@Model.NgayTao.ToString("dd/MM/yyyy")</div>
+                <div class="stat-label">Ngày đăng ký tài khoản</div>
+            </div>
+        </div>
+
+        <div class="bento-stat-card">
+            <div class="stat-icon @(Model.ConHoatDong == true ? "bg-success-soft text-success" : "bg-danger-soft text-danger")">
+                <i class="bi @(Model.ConHoatDong == true ? "bi-check-circle" : "bi-lock")"></i>
+            </div>
+            <div>
+                <div class="stat-value fs-5">@(Model.ConHoatDong == true ? "Hoạt động" : "Bị khóa")</div>
+                <div class="stat-label">Trạng thái bảo mật</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- LEFT: Lịch sử đơn hàng của khách -->
+        <div class="col-lg-8">
+            <div class="bento-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-receipt me-2 text-primary"></i>Lịch sử đơn hàng</h5>
+                    <span class="badge bg-primary-subtle text-primary">@donHangs.Count đơn</span>
+                </div>
+                @if (!donHangs.Any())
+                {
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-bag-x fs-1 d-block mb-2 opacity-50"></i>
+                        Người dùng này chưa phát sinh đơn đặt hàng nào trên hệ thống.
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table admin-table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Mã đơn</th>
+                                    <th>Sản phẩm</th>
+                                    <th>Tổng tiền</th>
+                                    <th>Trạng thái</th>
+                                    <th>Ngày đặt</th>
+                                    <th class="text-center">Chi tiết</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var d in donHangs)
+                                {
+                                    <tr>
+                                        <td>
+                                            <a href="/Admin/DonHang/Detail/@d.Id" class="fw-bold font-mono text-primary text-decoration-none">
+                                                #@d.MaDonHang
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <small class="text-dark fw-semibold">@d.Chitietdonhangs.Count món</small>
+                                        </td>
+                                        <td>
+                                            <span class="font-mono fw-bold text-dark">@d.TongThanhToan.ToString("N0")₫</span>
+                                        </td>
+                                        <td>
+                                            @if (d.TrangThai == "Hoàn thành" || d.TrangThai == "Đã thanh toán")
+                                            {
+                                                <span class="badge bg-success-subtle text-success">@d.TrangThai</span>
+                                            }
+                                            else if (d.TrangThai == "Chờ xử lý" || d.TrangThai == "Đang xử lý")
+                                            {
+                                                <span class="badge bg-warning-subtle text-warning">@d.TrangThai</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-danger-subtle text-danger">@d.TrangThai</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <small class="text-muted font-mono">@d.NgayTao.ToString("dd/MM/yyyy HH:mm")</small>
+                                        </td>
+                                        <td class="text-center">
+                                            <a href="/Admin/DonHang/Detail/@d.Id" class="btn-action btn-info" title="Xem đơn này">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- RIGHT: Thông tin tài khoản -->
+        <div class="col-lg-4">
+            <div class="bento-card">
+                <div class="text-center mb-4">
+                    <div class="user-avatar mx-auto mb-3" style="width: 72px; height: 72px; font-size: 26px; background: #e0e7ff; color: #4338ca;">
+                        @(Model.HoTen.Length >= 2 ? Model.HoTen.Substring(0, 2).ToUpper() : "ND")
+                    </div>
+                    <h5 class="fw-bold text-dark mb-1">@Model.HoTen</h5>
+                    <div class="text-muted small">@Model.Email</div>
+                    <div class="mt-2">
+                        @if (Model.VaiTro == "Quản trị")
+                        {
+                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-1">
+                                <i class="bi bi-shield-lock-fill me-1"></i>Quản trị viên
+                            </span>
+                        }
+                        else if (Model.VaiTro == "Nhân viên")
+                        {
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1">
+                                <i class="bi bi-person-badge-fill me-1"></i>Nhân viên hỗ trợ
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary-subtle text-secondary border px-3 py-1">
+                                <i class="bi bi-person-fill me-1"></i>Khách hàng
+                            </span>
+                        }
+                    </div>
+                </div>
+
+                <div class="info-list">
+                    <div class="info-row">
+                        <span class="info-label">ID tài khoản:</span>
+                        <span class="info-value font-mono">#@Model.Id</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Số điện thoại:</span>
+                        <span class="info-value font-mono">@(Model.SoDienThoai ?? "Chưa cập nhật")</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Xác thực Email:</span>
+                        <span class="info-value">
+                            @if (Model.ThoiDiemXacThucEmail.HasValue)
+                            {
+                                <span class="text-success"><i class="bi bi-check-circle-fill me-1"></i>Đã xác thực</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted"><i class="bi bi-clock me-1"></i>Chưa xác thực</span>
+                            }
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Cập nhật lần cuối:</span>
+                        <span class="info-value font-mono">@Model.NgayCapNhat.ToString("dd/MM/yyyy HH:mm")</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
