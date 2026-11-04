@@ -1,0 +1,385 @@
+@model List<WebBanPhanMem.Models.Taikhoan>
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Quản lý Khách hàng & Phân quyền";
+
+    var allUsers = Model ?? new List<WebBanPhanMem.Models.Taikhoan>();
+    int totalCount = allUsers.Count;
+    int customerCount = allUsers.Count(u => u.VaiTro == "Khách hàng");
+    int staffCount = allUsers.Count(u => u.VaiTro == "Nhân viên");
+    int adminCount = allUsers.Count(u => u.VaiTro == "Quản trị");
+    int activeCount = allUsers.Count(u => u.ConHoatDong == true);
+
+    string searchTerm = ViewBag.SearchTerm as string ?? "";
+    string selectedVaiTro = ViewBag.SelectedVaiTro as string ?? "";
+    bool? selectedStatus = ViewBag.SelectedStatus as bool?;
+}
+
+<div class="admin-page-wrapper">
+    <!-- Page Header -->
+    <div class="page-header-bar">
+        <div>
+            <h1 class="page-title"><i class="bi bi-people-fill me-2 text-primary"></i>Quản lý Khách hàng & Phân quyền</h1>
+            <p class="page-subtitle">Danh sách tài khoản hệ thống, phân vai trò (Khách hàng, Nhân viên, Quản trị) và quản lý bảo mật</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-primary btn-add" data-bs-toggle="modal" data-bs-target="#modalThemNguoiDung">
+                <i class="bi bi-person-plus-fill me-1"></i> Thêm tài khoản mới
+            </button>
+        </div>
+    </div>
+
+    <!-- Alerts -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show bento-alert" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show bento-alert" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Bento Stats Row -->
+    <div class="bento-stats-row">
+        <div class="bento-stat-card">
+            <div class="stat-icon bg-primary-soft">
+                <i class="bi bi-people text-primary"></i>
+            </div>
+            <div>
+                <div class="stat-value">@totalCount</div>
+                <div class="stat-label">Tổng số tài khoản</div>
+            </div>
+        </div>
+
+        <div class="bento-stat-card">
+            <div class="stat-icon bg-success-soft">
+                <i class="bi bi-person-check text-success"></i>
+            </div>
+            <div>
+                <div class="stat-value text-success">@customerCount</div>
+                <div class="stat-label">Khách hàng</div>
+            </div>
+        </div>
+
+        <div class="bento-stat-card">
+            <div class="stat-icon bg-info-soft">
+                <i class="bi bi-person-badge text-info"></i>
+            </div>
+            <div>
+                <div class="stat-value text-info">@staffCount</div>
+                <div class="stat-label">Nhân viên hỗ trợ</div>
+            </div>
+        </div>
+
+        <div class="bento-stat-card">
+            <div class="stat-icon bg-warning-soft">
+                <i class="bi bi-shield-lock-fill text-warning"></i>
+            </div>
+            <div>
+                <div class="stat-value text-dark">@adminCount</div>
+                <div class="stat-label">Quản trị viên (Admin)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter & Search Bar -->
+    <div class="bento-card filter-bar">
+        <form method="get" action="@Url.Action("Index")" class="filter-form">
+            <div class="filter-group">
+                <div class="search-input-wrap">
+                    <i class="bi bi-search search-icon-inner"></i>
+                    <input type="text" name="search" class="form-control search-input"
+                           placeholder="Tìm theo họ tên, email, số điện thoại..."
+                           value="@searchTerm" />
+                </div>
+                <select name="vaiTro" class="form-select filter-select" style="min-width: 170px;">
+                    <option value="">-- Tất cả vai trò --</option>
+                    <option value="Khách hàng" selected="@(selectedVaiTro == "Khách hàng")">Khách hàng</option>
+                    <option value="Nhân viên" selected="@(selectedVaiTro == "Nhân viên")">Nhân viên</option>
+                    <option value="Quản trị" selected="@(selectedVaiTro == "Quản trị")">Quản trị</option>
+                </select>
+                <select name="conHoatDong" class="form-select filter-select" style="min-width: 170px;">
+                    <option value="">-- Mọi trạng thái --</option>
+                    <option value="true" selected="@(selectedStatus == true)">Đang hoạt động</option>
+                    <option value="false" selected="@(selectedStatus == false)">Đang bị khóa</option>
+                </select>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-funnel me-1"></i>Lọc
+                </button>
+                <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-circle me-1"></i>Xóa lọc
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Users Table -->
+    <div class="bento-card table-card">
+        <div class="table-responsive">
+            <table class="table admin-table" id="usersTable">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">#</th>
+                        <th>Người dùng</th>
+                        <th>Email & Số điện thoại</th>
+                        <th>Vai trò</th>
+                        <th class="text-center">Đơn mua</th>
+                        <th>Trạng thái</th>
+                        <th>Ngày tạo</th>
+                        <th class="text-center" style="width: 150px;">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!allUsers.Any())
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center py-5 text-muted">
+                                <i class="bi bi-person-x fs-2 d-block mb-2"></i>
+                                Không tìm thấy người dùng nào phù hợp với bộ lọc.
+                            </td>
+                        </tr>
+                    }
+                    @{ int idx = 1; }
+                    @foreach (var u in allUsers)
+                    {
+                        <tr>
+                            <td class="text-muted">@idx</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="user-avatar" style="width: 38px; height: 38px; font-size: 14px; background: #e0e7ff; color: #4338ca;">
+                                        @(u.HoTen.Length >= 2 ? u.HoTen.Substring(0, 2).ToUpper() : "ND")
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold text-dark">@u.HoTen</div>
+                                        <small class="text-muted font-mono">ID: #@u.Id</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div><i class="bi bi-envelope me-1 text-muted"></i><a href="mailto:@u.Email" class="text-decoration-none">@u.Email</a></div>
+                                @if (!string.IsNullOrEmpty(u.SoDienThoai))
+                                {
+                                    <small class="text-muted font-mono"><i class="bi bi-telephone me-1"></i>@u.SoDienThoai</small>
+                                }
+                                else
+                                {
+                                    <small class="text-muted">—</small>
+                                }
+                            </td>
+                            <td>
+                                @if (u.VaiTro == "Quản trị")
+                                {
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">
+                                        <i class="bi bi-shield-lock-fill me-1"></i>Quản trị
+                                    </span>
+                                }
+                                else if (u.VaiTro == "Nhân viên")
+                                {
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">
+                                        <i class="bi bi-person-badge-fill me-1"></i>Nhân viên
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary-subtle text-secondary border px-2 py-1">
+                                        <i class="bi bi-person-fill me-1"></i>Khách hàng
+                                    </span>
+                                }
+                            </td>
+                            <td class="text-center">
+                                <span class="badge badge-package-link">
+                                    <i class="bi bi-bag-check me-1"></i>@u.Donhangs.Count đơn
+                                </span>
+                            </td>
+                            <td>
+                                <form asp-action="ToggleStatus" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@u.Id" />
+                                    <button type="submit" class="btn-status @(u.ConHoatDong == true ? "status-active" : "status-inactive")" title="Nhấn để Khóa/Mở khóa">
+                                        @(u.ConHoatDong == true ? "Hoạt động" : "Bị khóa")
+                                    </button>
+                                </form>
+                            </td>
+                            <td>
+                                <small class="text-muted font-mono">@u.NgayTao.ToString("dd/MM/yyyy")</small>
+                            </td>
+                            <td>
+                                <div class="action-buttons justify-content-center">
+                                    <a href="@Url.Action("Detail", new { id = u.Id })" class="btn-action btn-info" title="Hồ sơ & Đơn hàng">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <button class="btn-action btn-edit" title="Chỉnh sửa & Phân quyền"
+                                            onclick="openEditUserModal(@u.Id, '@u.HoTen.Replace("'", "\\'")', '@u.Email', '@(u.SoDienThoai ?? "")', '@u.VaiTro', @(u.ConHoatDong == true ? "true" : "false"))">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn-action btn-warning text-dark" title="Đặt lại mật khẩu"
+                                            onclick="openResetPwdModal(@u.Id, '@u.Email')">
+                                        <i class="bi bi-key"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        idx++;
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ===== Modal Thêm Tài Khoản Mới ===== -->
+<div class="modal fade admin-modal" id="modalThemNguoiDung" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-person-plus-fill me-2 text-primary"></i>Thêm tài khoản người dùng</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="Create" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Họ và tên <span class="text-danger">*</span></label>
+                            <input type="text" name="hoTen" class="form-control" placeholder="VD: Nguyễn Văn A" required />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Email đăng nhập <span class="text-danger">*</span></label>
+                            <input type="email" name="email" class="form-control" placeholder="name@domain.com" required />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Mật khẩu ban đầu <span class="text-danger">*</span></label>
+                            <input type="password" name="matKhau" class="form-control" placeholder="Tối thiểu 6 ký tự" minlength="6" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Số điện thoại</label>
+                            <input type="text" name="soDienThoai" class="form-control font-mono" placeholder="0987654321" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Vai trò / Phân quyền <span class="text-danger">*</span></label>
+                            <select name="vaiTro" class="form-select fw-semibold" required>
+                                <option value="Khách hàng">Khách hàng</option>
+                                <option value="Nhân viên">Nhân viên</option>
+                                <option value="Quản trị">Quản trị viên</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input" type="checkbox" name="conHoatDong" value="true" id="chkNewHoatDong" checked>
+                                <label class="form-check-label" for="chkNewHoatDong">Kích hoạt tài khoản ngay</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle me-1"></i>Tạo tài khoản</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ===== Modal Sửa & Phân Quyền ===== -->
+<div class="modal fade admin-modal" id="modalSuaNguoiDung" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-shield-check me-2 text-primary"></i>Phân quyền & Chỉnh sửa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="Edit" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="editUserId" />
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Email tài khoản</label>
+                            <input type="email" id="editUserEmail" class="form-control bg-light" readonly />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Họ và tên <span class="text-danger">*</span></label>
+                            <input type="text" name="hoTen" id="editUserHoTen" class="form-control" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Số điện thoại</label>
+                            <input type="text" name="soDienThoai" id="editUserSDT" class="form-control font-mono" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Vai trò / Phân quyền <span class="text-danger">*</span></label>
+                            <select name="vaiTro" id="editUserVaiTro" class="form-select fw-semibold" required>
+                                <option value="Khách hàng">Khách hàng</option>
+                                <option value="Nhân viên">Nhân viên</option>
+                                <option value="Quản trị">Quản trị viên</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input" type="checkbox" name="conHoatDong" value="true" id="editUserHoatDong">
+                                <label class="form-check-label" for="editUserHoatDong">Tài khoản được phép hoạt động (Không bị khóa)</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i>Lưu thay đổi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ===== Modal Đặt Lại Mật Khẩu ===== -->
+<div class="modal fade admin-modal" id="modalResetPassword" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-key me-2 text-warning"></i>Đổi mật khẩu</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="ResetPassword" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="resetUserId" />
+                <div class="modal-body">
+                    <p class="small text-muted mb-2">Đặt mật khẩu mới cho tài khoản: <strong id="resetUserEmail"></strong></p>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Mật khẩu mới <span class="text-danger">*</span></label>
+                        <input type="password" name="matKhauMoi" class="form-control" placeholder="Tối thiểu 6 ký tự" minlength="6" required />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-warning btn-sm fw-semibold"><i class="bi bi-check2 me-1"></i>Cập nhật</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function openEditUserModal(id, hoTen, email, sdt, vaiTro, hoatDong) {
+        document.getElementById('editUserId').value = id;
+        document.getElementById('editUserHoTen').value = hoTen;
+        document.getElementById('editUserEmail').value = email;
+        document.getElementById('editUserSDT').value = sdt;
+        document.getElementById('editUserVaiTro').value = vaiTro;
+        document.getElementById('editUserHoatDong').checked = hoatDong;
+        new bootstrap.Modal(document.getElementById('modalSuaNguoiDung')).show();
+    }
+
+    function openResetPwdModal(id, email) {
+        document.getElementById('resetUserId').value = id;
+        document.getElementById('resetUserEmail').textContent = email;
+        new bootstrap.Modal(document.getElementById('modalResetPassword')).show();
+    }
+</script>
+}
+
