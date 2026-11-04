@@ -36,6 +36,13 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show bento-alert" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
 
     <!-- Bento Grid Layout: Info + Packages -->
     <div class="row g-4">
@@ -227,8 +234,14 @@
                             <input type="text" name="TenGoiBanQuyen" class="form-control" placeholder="VD: 1 năm / 1 máy" required />
                         </div>
                         <div class="col-4">
-                            <label class="form-label fw-semibold">Mã hàng <span class="text-danger">*</span></label>
-                            <input type="text" name="MaHang" class="form-control" placeholder="SKU" required />
+                            <label class="form-label fw-semibold">Mã hàng (SKU) <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input type="text" name="MaHang" id="themMaHang" class="form-control text-uppercase" placeholder="VD: M365-1Y-01" required />
+                                <button type="button" class="btn btn-outline-secondary" onclick="generateRandomSku('themMaHang')" title="Tạo mã tự động">
+                                    <i class="bi bi-magic"></i>
+                                </button>
+                            </div>
+                            <small class="text-muted" style="font-size: 11px;">Mã duy nhất, không trùng</small>
                         </div>
                         <div class="col-6">
                             <label class="form-label fw-semibold">Giá gốc (₫) <span class="text-danger">*</span></label>
@@ -353,6 +366,13 @@
 
 @section Scripts {
 <script>
+    // Hàm sinh mã hàng (SKU) ngẫu nhiên không trùng
+    function generateRandomSku(inputId) {
+        const prefix = "SKU";
+        const randomNum = Math.floor(100000 + Math.random() * 900000);
+        document.getElementById(inputId).value = `${prefix}-${randomNum}`;
+    }
+
     function openEditGoi(id, spId, ten, ma, gia, km, thoihan, soMay, baohanh, hoatDong) {
         document.getElementById('editGoiId').value = id;
         document.getElementById('editGoiSPId').value = spId;

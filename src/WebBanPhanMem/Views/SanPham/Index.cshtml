@@ -187,12 +187,27 @@
                                     <a href="@Url.Action("Detail", new { id = sp.Id })" class="btn-action btn-info" title="Chi tiết & Gói BQ">
                                         <i class="bi bi-eye"></i>
                                     </a>
-                                    <button class="btn-action btn-edit" title="Sửa"
-                                            onclick="openEditModal(@sp.Id, '@sp.TenSanPham.Replace("'","\\'")', @sp.DanhMucId, @(sp.DoiTacId ?? 0), '@sp.DuongDan', '@(sp.MoTaNgan?.Replace("'","\\'")??"" )', '@(sp.AnhDaiDien??"")', @(sp.LaNoiBat ? "true" : "false"), @(sp.ConHoatDong == true ? "true" : "false"))">
+                                    <!-- Lưu dữ liệu JSON an toàn chống lỗi nháy kép / xuống dòng -->
+                                    <script type="application/json" id="sp-data-@sp.Id">
+                                        @Html.Raw(System.Text.Json.JsonSerializer.Serialize(new {
+                                            id = sp.Id,
+                                            tenSanPham = sp.TenSanPham,
+                                            danhMucId = sp.DanhMucId,
+                                            doiTacId = sp.DoiTacId ?? 0,
+                                            duongDan = sp.DuongDan,
+                                            moTaNgan = sp.MoTaNgan ?? "",
+                                            moTaChiTiet = sp.MoTaChiTiet ?? "",
+                                            anhDaiDien = sp.AnhDaiDien ?? "",
+                                            laNoiBat = sp.LaNoiBat,
+                                            conHoatDong = sp.ConHoatDong == true
+                                        }))
+                                    </script>
+                                    <button type="button" class="btn-action btn-edit" title="Sửa"
+                                            onclick="openEditModalById(@sp.Id)">
                                         <i class="bi bi-pencil"></i>
                                     </button>
-                                    <button class="btn-action btn-delete" title="Xóa"
-                                            onclick="confirmDelete(@sp.Id, '@sp.TenSanPham.Replace("'","\\'")')">
+                                    <button type="button" class="btn-action btn-delete" title="Xóa"
+                                            onclick="confirmDelete(@sp.Id, '@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(sp.TenSanPham))')">
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 </div>
@@ -214,7 +229,7 @@
                 <h5 class="modal-title"><i class="bi bi-plus-circle me-2"></i>Thêm sản phẩm mới</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form asp-action="Create" method="post">
+            <form asp-action="Create" method="post" enctype="multipart/form-data">
                 @Html.AntiForgeryToken()
                 <div class="modal-body">
                     <div class="row g-3">
@@ -242,17 +257,21 @@
                                 }
                             </select>
                         </div>
-                        <div class="col-md-8">
+                        <div class="col-md-6">
                             <label class="form-label fw-semibold">Đường dẫn (slug)</label>
                             <input type="text" name="DuongDan" class="form-control" placeholder="tu-dong-tao-tu-ten" />
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label fw-semibold">Ảnh đại diện (URL)</label>
-                            <input type="text" name="AnhDaiDien" class="form-control" placeholder="https://..." />
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Tải lên ảnh đại diện</label>
+                            <input type="file" name="anhDaiDienFile" class="form-control" accept="image/*" />
                         </div>
                         <div class="col-12">
                             <label class="form-label fw-semibold">Mô tả ngắn</label>
                             <textarea name="MoTaNgan" class="form-control" rows="2" placeholder="Mô tả ngắn gọn về sản phẩm..."></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Mô tả chi tiết</label>
+                            <textarea name="MoTaChiTiet" class="form-control" rows="4" placeholder="Nhập mô tả chi tiết, tính năng, cấu hình yêu cầu..."></textarea>
                         </div>
                         <div class="col-md-6">
                             <div class="form-check form-switch mt-2">
@@ -285,7 +304,7 @@
                 <h5 class="modal-title"><i class="bi bi-pencil-square me-2"></i>Chỉnh sửa sản phẩm</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form asp-action="Edit" method="post">
+            <form asp-action="Edit" method="post" enctype="multipart/form-data">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="Id" id="editId" />
                 <div class="modal-body">
@@ -313,17 +332,26 @@
                                 }
                             </select>
                         </div>
-                        <div class="col-md-8">
+                        <div class="col-md-6">
                             <label class="form-label fw-semibold">Đường dẫn (slug)</label>
                             <input type="text" name="DuongDan" id="editSlug" class="form-control" />
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label fw-semibold">Ảnh đại diện (URL)</label>
-                            <input type="text" name="AnhDaiDien" id="editAnh" class="form-control" />
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Thay đổi ảnh đại diện (Tệp ảnh)</label>
+                            <input type="file" name="anhDaiDienFile" id="editAnhFile" class="form-control" accept="image/*" onchange="previewEditImage(this)" />
+                            <div class="mt-2 d-flex align-items-center gap-2" id="currentImageWrapper">
+                                <span class="text-muted small">Ảnh hiện tại:</span>
+                                <img id="editAnhPreview" src="" alt="Preview" style="max-height: 48px; max-width: 60px; object-fit: contain; border-radius: 6px; border: 1px solid #e2e8f0; display: none;" />
+                                <span id="noImageText" class="text-muted small fst-italic">Chưa có ảnh</span>
+                            </div>
                         </div>
                         <div class="col-12">
                             <label class="form-label fw-semibold">Mô tả ngắn</label>
                             <textarea name="MoTaNgan" id="editMoTa" class="form-control" rows="2"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Mô tả chi tiết</label>
+                            <textarea name="MoTaChiTiet" id="editMoTaChiTiet" class="form-control" rows="4" placeholder="Nhập mô tả chi tiết sản phẩm..."></textarea>
                         </div>
                         <div class="col-md-6">
                             <div class="form-check form-switch mt-2">
@@ -375,25 +403,60 @@
 
 @section Scripts {
 <script>
-    // Mở modal sửa và điền dữ liệu
-    function openEditModal(id, ten, danhMucId, doiTacId, slug, moTa, anh, laNoiBat, hoatDong) {
-        document.getElementById('editId').value = id;
-        document.getElementById('editTen').value = ten;
-        document.getElementById('editSlug').value = slug;
-        document.getElementById('editMoTa').value = moTa;
-        document.getElementById('editAnh').value = anh;
-        document.getElementById('editNoiBat').checked = laNoiBat;
-        document.getElementById('editHoatDong').checked = hoatDong;
+    // Preview ảnh khi chọn file mới
+    function previewEditImage(input) {
+        const preview = document.getElementById('editAnhPreview');
+        const noImageText = document.getElementById('noImageText');
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                preview.style.display = 'inline-block';
+                if (noImageText) noImageText.style.display = 'none';
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    // Mở modal sửa bằng dữ liệu JSON sạch (tránh lỗi nháy kép / ký tự đặc biệt)
+    function openEditModalById(id) {
+        const dataScript = document.getElementById('sp-data-' + id);
+        if (!dataScript) return;
+        const sp = JSON.parse(dataScript.textContent);
+
+        document.getElementById('editId').value = sp.id;
+        document.getElementById('editTen').value = sp.tenSanPham || '';
+        document.getElementById('editSlug').value = sp.duongDan || '';
+        document.getElementById('editMoTa').value = sp.moTaNgan || '';
+        document.getElementById('editMoTaChiTiet').value = sp.moTaChiTiet || '';
+        document.getElementById('editNoiBat').checked = sp.laNoiBat;
+        document.getElementById('editHoatDong').checked = sp.conHoatDong;
+
+        // Reset file input
+        const fileInput = document.getElementById('editAnhFile');
+        if (fileInput) fileInput.value = '';
+
+        // Hiển thị preview ảnh hiện tại nếu có
+        const preview = document.getElementById('editAnhPreview');
+        const noImageText = document.getElementById('noImageText');
+        if (sp.anhDaiDien && sp.anhDaiDien.trim() !== '') {
+            preview.src = sp.anhDaiDien;
+            preview.style.display = 'inline-block';
+            if (noImageText) noImageText.style.display = 'none';
+        } else {
+            preview.style.display = 'none';
+            if (noImageText) noImageText.style.display = 'inline-block';
+        }
 
         const dmSelect = document.getElementById('editDanhMuc');
         for (let opt of dmSelect.options) {
-            opt.selected = (opt.value == danhMucId);
+            opt.selected = (opt.value == sp.danhMucId);
         }
 
         const dtSelect = document.getElementById('editDoiTac');
         if (dtSelect) {
             for (let opt of dtSelect.options) {
-                opt.selected = (opt.value == doiTacId);
+                opt.selected = (opt.value == sp.doiTacId);
             }
         }
 
