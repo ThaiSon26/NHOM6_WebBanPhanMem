@@ -56,6 +56,7 @@
                     bool isKhoKey = currentPath.Contains("khokey");
                     bool isDonHang = currentPath.Contains("donhang");
                     bool isNguoiDung = currentPath.Contains("nguoidung") || currentPath.Contains("account");
+                    bool isMarketing = currentPath.Contains("marketing") || currentPath.Contains("magiamgia") || currentPath.Contains("danhgia");
                     bool isThongKe = currentPath.Contains("thongke");
                     bool isCaiDat = currentPath.Contains("caidat");
                 }
@@ -112,6 +113,14 @@
                     <div class="nav-link-item-left">
                         <i class="bi bi-people-fill nav-icon"></i>
                         <span class="nav-text">Người dùng</span>
+                    </div>
+                    <i class="bi bi-chevron-right nav-chevron"></i>
+                </a>
+
+                <a href="/Admin/Marketing" class="nav-link-item @(isMarketing ? "active" : "")">
+                    <div class="nav-link-item-left">
+                        <i class="bi bi-megaphone-fill nav-icon"></i>
+                        <span class="nav-text">Marketing & Review</span>
                     </div>
                     <i class="bi bi-chevron-right nav-chevron"></i>
                 </a>
